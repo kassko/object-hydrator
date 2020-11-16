@@ -40,7 +40,6 @@ class EssentialDataProvider
 
     public function loadPropertyAndGetValue(string $propertyName)
     {
-        //var_dump(__FUNCTION__, $propertyName);
         return $this->memberAccessStrategyFactory->getterSetter($this->object, $this->classMetadata)->getValue($this->object, $propertyName);
     }
 

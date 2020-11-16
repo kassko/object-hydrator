@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Big\Hydrator\ClassMetadata;
 
 use Big\StandardClassMetadata\Method;
 
@@ -18,34 +18,10 @@ class Conditional extends Base
      * @var string
      */
     public string $id;
-    /**
-     * @internal
-     */
-    public ?string $expression = null;
-    /**
-     * @internal
-     * @var \Big\StandardClassMetadata\Method
-     */
-    public ?Method $method = null;
     //=== Annotations attributes : end ===//
 
-    public function isExpression() : bool
+    public function getId() : string
     {
-        return null !== $this->expression;
-    }
-
-    public function getExpression() : ?string
-    {
-        return $this->expression;
-    }
-
-    public function isMethod() : bool
-    {
-        return null !== $this->method;
-    }
-
-    public function getMethod() : ?Method
-    {
-        return $this->method;
+        return $this->id;
     }
 }

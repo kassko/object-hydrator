@@ -1,6 +1,8 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Big\Hydrator\ClassMetadata\Conditional;
+
+use Big\Hydrator\ClassMetadata\Conditional;
 
 /**
  * @Annotation
@@ -8,18 +10,13 @@ namespace Big\Hydrator;
  *
  * @author kko
  */
-class ConditionalExpression extends Conditional
+class Expression extends Conditional
 {
     //=== Annotations attributes (must be public) : begin ===//
     /**
      * @internal
-     * @var string
      */
-    public string $id;
-    /**
-     * @internal
-     */
-    public ?string $expression = null;
+    public string $expression;
     //=== Annotations attributes : end ===//
 
     public function isExpression() : bool
@@ -27,7 +24,7 @@ class ConditionalExpression extends Conditional
         return null !== $this->expression;
     }
 
-    public function getExpression() : ?string
+    public function getExpression() : string
     {
         return $this->expression;
     }

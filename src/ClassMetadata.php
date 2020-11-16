@@ -2,8 +2,8 @@
 
 namespace Big\Hydrator;
 
-use Big\Hydrator\ClassMetadata\{DataSource, DataSources, Property};
-use Big\StandardClassMetadata\Methods;
+use Big\Hydrator\ClassMetadata;
+use Big\StandardClassMetadata as StdClassMetadata;
 
 /**
  * @Annotation
@@ -23,33 +23,32 @@ class ClassMetadata
      * @internal
      * @var \Big\Hydrator\ClassMetadata\Methods
      */
-    public ?Methods $beforeUsingLoadedMetadata = null;
+    public ?StdClassMetadata\Methods $beforeUsingLoadedMetadata = null;
     /**
      * @internal
      * @var \Big\Hydrator\ClassMetadata\Methods
      */
-    public ?Methods $afterUsingLoadedMetadata = null;
+    public ?StdClassMetadata\Methods $afterUsingLoadedMetadata = null;
     /**
      * @internal
      * @var \Big\Hydrator\ClassMetadata\Methods
      */
-    public ?Methods $beforeHydration = null;
+    public ?StdClassMetadata\Methods $beforeHydration = null;
     /**
      * @internal
      * @var \Big\Hydrator\ClassMetadata\Methods
      */
-    public ?Methods $afterHydration = null;
+    public ?StdClassMetadata\Methods $afterHydration = null;
 
-    private array $properties = [];
-    private array $includedProperties = [];
-    private array $excludedProperties = [];
+    private array $explicitlyIncludedProperties = [];
+    private array $explicitlyExcludedProperties = [];
     //=== Original metadata: end ===//
 
-    private array $managedPropertiesVersions = [];
-    private array $basicManagedPropertiesVersions = [];
-    private array $loadableManagedPropertiesVersions = [];
-    private DataSources $dataSources;
-    private Conditionals $conditionals;
+    private array $candidatesProperties = [];
+    private array $basicCandidatesProperties = [];
+    private array $loadableCandidatesProperties = [];
+    private ClassMetadata\DataSources $dataSources;
+    private ClassMetadata\Conditionals $conditionals;
     private \ReflectionClass $reflectionClass;
 
     public function __construct(object $object)
@@ -68,22 +67,22 @@ class ClassMetadata
         $this->compute();
     }
 
-    public function getBasicManagedPropertiesVersions() : array
+    public function getBasicCandidatesProperties() : array
     {
-        return $this->basicManagedPropertiesVersions;
+        return $this->basicCandidatesProperties;
     }
 
-    public function getLoadableManagedPropertiesVersions() : array
+    public function getLoadableCandidatesProperties() : array
     {
-        return $this->loadableManagedPropertiesVersions;
+        return $this->loadableCandidatesProperties;
     }
 
-    public function getManagedPropertyVersions($propertyName) : array
+    public function getCandidateProperties($propertyName) : ClassMetadata\CandidateProperties
     {
-        return $this->managedPropertiesVersions[$propertyName] ?? null;
+        return $this->candidatesProperties[$propertyName];
     }
 
-    public function findDataSource(string $id) : ?DataSource
+    public function findDataSource(string $id) : ClassMetadata\DataSource
     {
         foreach ($this->dataSources->items as $key => $dataSource) {
             if ($id === $dataSource->id) {
@@ -91,7 +90,7 @@ class ClassMetadata
             }
         }
 
-        return null;
+        throw new \LogicException(sprintf('Cannot find datasource "%s".', $id));
     }
 
     public function findDataSourcesByTag(string $tag) : array
@@ -107,7 +106,7 @@ class ClassMetadata
         return $dataSources;
     }
 
-    public function findConditional(string $id) : ?DataSource
+    public function findConditional(string $id) : object
     {
         foreach ($this->conditionals->items as $key => $conditional) {
             if ($id === $conditional->id) {
@@ -115,77 +114,73 @@ class ClassMetadata
             }
         }
 
-        return null;
+        throw new \LogicException(sprintf('Cannot find conditional "%s".', $id));
     }
 
     private function compile() : void
     {
-        $this->compileManagedProperties();
-        $this->compileManagedPropertiesDataSources();
-        $this->compileManagedPropertiesConditionals();
+        $this->compileProperties();
+        $this->compilePropertiesDataSources();
+        $this->compilePropertiesConditionals();
     }
 
-    private function compileManagedProperties() : void
+    private function compileProperties() : void
     {
         if ($this->propertiesExcludedByDefault) {
-             foreach ($this->reflectionClass->getProperties() as $reflectionProperty) {
-                if (isset($this->includedProperties[$name = $reflectionProperty->getName()])) {//Property is explicitly included with given config and so managed.
-                    $versions = [];
-                    foreach ($this->includedProperties[$name] as $property) {
-                        $versions[] = $property->compile($name);
+            foreach ($this->reflectionClass->getProperties() as $reflectionProperty) {
+                if (isset($this->explicitlyIncludedProperties[$name = $reflectionProperty->getName()])) {//Property is explicitly included with given config and so managed.
+                    foreach ($this->explicitlyIncludedProperties[$name] as $candidateProperty) {
+                        $candidateProperty->compile($reflectionProperty);
                     }
-                    $this->managedPropertiesVersions[$name] = new PropertyVersions($name, $versions);
+                    $this->candidatesProperties[$name] = $this->explicitlyIncludedProperties[$name];
                 }
 
                 //Properties which are not explicitly included are not managed.
             }
         } else {
             foreach ($this->reflectionClass->getProperties() as $reflectionProperty) {
-                if (isset($this->includedProperties[$name = $reflectionProperty->getName()])) {//Property is explicitly included with given config and so managed.
-                    $versions = [];
-                    foreach ($this->includedProperties[$name] as $property) {
-                       $versions[] = $property->compile($reflectionProperty->getName());
+                if (isset($this->explicitlyIncludedProperties[$name = $reflectionProperty->getName()])) {//Property is explicitly included with given config and so managed.
+                    foreach ($this->explicitlyIncludedProperties[$name] as $candidateProperty) {
+                        $candidateProperty->compile($reflectionProperty);
                     }
-                    $this->managedPropertiesVersions[$name] = new PropertyVersions($name, $versions);
-                } elseif (! isset($this->excludedProperties[$name = $reflectionProperty->getName()])) {//Property is implicitly included with a default config and so managed.
-                    $this->managedPropertiesVersions[$name] = new PropertyVersions(
-                        $name,
-                        [(new ClassMetadata\Property)->compile($reflectionProperty->getName())]
-                    );
+                    $this->candidatesProperties[$name] = $this->explicitlyIncludedProperties[$name];
+                } elseif (! isset($this->explicitlyExcludedProperties[$name = $reflectionProperty->getName()])) {//Property is implicitly included with a default config and so managed.
+                    $candidateProperties = new ClassMetadata\CandidateProperties;
+                    $candidateProperties->items[] = (new ClassMetadata\Property)->compile($reflectionProperty);
                 }
             }
         }
     }
 
-    private function compileManagedPropertiesDataSources() : void
+    private function compilePropertiesDataSources() : void
     {
-        foreach ($this->managedPropertiesVersions as $propertyVersions) {
-            foreach ($propertyVersions->getVersions() as $property) {
-                if ($property->hasDataSourceRef() && null !== ($dataSource = $this->findDataSource($property->getDataSourceRef()))) {
+        foreach ($this->candidatesProperties as $candidateProperties) {
+            foreach ($candidateProperties->items as $candidateProperty) {
+                if ($candidateProperty->hasDataSourceRef() && null !== ($dataSource = $this->findDataSource($candidateProperty->getDataSourceRef()))) {
 
                     //Move this in class "Method"
                     $reflClass = new \ReflectionClass($dataSource->getMethod()->getClass());
                     $dataSource->getMethod()->setReflector($reflClass->getMethod($dataSource->getMethod()->getName()));
 
-                    $property->setDataSource($dataSource);
+                    $candidateProperty->setDataSource($dataSource);
                 }
             }
         }
     }
 
-    private function compileManagedPropertiesConditionals() : void
+    private function compilePropertiesConditionals() : void
     {
-        foreach ($this->managedPropertiesVersions as $propertyVersions) {
-            foreach ($propertyVersions->getVersions() as $property) {
-                if ($property->hasConditionalRef() && null !== ($conditional = $this->findConditional($property->getConditionalRef()))) {
+        foreach ($this->candidatesProperties as $candidateProperties) {
+            foreach ($candidateProperties->items as $candidateProperty) {
+                if ($candidateProperty->hasConditionalRef() && null !== ($conditional = $this->findConditional($candidateProperty->getConditionalRef()))) {
 
                     //Move this in class "Method"
-                    if ($conditional instanceof ConditionalMethod) {
+                    if ($conditional instanceof Conditional\Method) {
                         $reflClass = new \ReflectionClass($conditional->getMethod()->getClass());
                         $conditional->getMethod()->setReflector($reflClass->getMethod($conditional->getMethod()->getName()));
                     }
 
-                    $property->setConditional($conditional);
+                    $candidateProperty->setConditional($conditional);
                 }
             }
         }
@@ -199,21 +194,25 @@ class ClassMetadata
 
     private function computeBasicManagedPropertiesVersions() : void
     {
-        foreach ($this->managedPropertiesVersions as $propertyName => &$propertyVersions) {
-            $this->basicManagedPropertiesVersions[$propertyName] = new PropertyVersions(
-                $propertyName,
-                array_filter($propertyVersions->getVersions(), fn($property) => ! $property->hasDataSource())
-            );
+        foreach ($this->candidatesProperties as $propertyName => $candidateProperties) {
+            $basicCandidateProperties = new ClassMetadata\CandidateProperties;
+            $basicCandidateProperties->name = $propertyName;
+            $basicCandidateProperties->variables = $candidateProperties->variables;
+            $basicCandidateProperties->items = array_filter($candidateProperties->items, fn($property) => ! $property->hasDataSource());
+
+            $this->basicCandidatesProperties[$propertyName] = $basicCandidateProperties;
         }
     }
 
     private function computeLoadableManagedPropertiesVersions() : void
     {
-        foreach ($this->managedPropertiesVersions as $propertyName => &$propertyVersions) {
-            $this->loadableManagedPropertiesVersions[$propertyName] = new PropertyVersions(
-                $propertyName,
-                array_filter($propertyVersions->getVersions(), fn($property) => ! $property->hasDataSource())
-            );
+        foreach ($this->candidatesProperties as $propertyName => $candidateProperties) {
+            $loadableCandidateProperties = new ClassMetadata\CandidateProperties;
+            $loadableCandidateProperties->name = $propertyName;
+            $loadableCandidateProperties->variables = $candidateProperties->variables;
+            $loadableCandidateProperties->items = array_filter($candidateProperties->items, fn($property) => ! $property->hasDataSource());
+
+            $this->loadableCandidatesProperties[$propertyName] = $loadableCandidateProperties;
         }
     }
 
@@ -223,50 +222,58 @@ class ClassMetadata
         return $this;
     }
 
-    public function addIncludedProperty(string $propertyName, Property $property) : self
+    public function addExplicitlyIncludedProperty(string $propertyName, ClassMetadata\CandidateProperties $candidateProperties) : self
     {
-        if (! isset($this->includedProperties[$propertyName])) {
-            $this->includedProperties[$propertyName] = [];
-        }
-        $this->includedProperties[$propertyName][] = $property;
-
+        $this->explicitlyIncludedProperties[$propertyName] = $candidateProperties;
         return $this;
     }
 
-    public function addExcludedProperty(string $propertyName, Property $property) : self
+    public function addExplicitlyExcludedProperty(string $propertyName, ClassMetadata\ExcludedProperty $excludedProperty) : self
     {
-        $this->excludedProperties[$propertyName] = $property;
+        $this->explicitlyExcludedProperties[$propertyName] = $excludedProperty;
         return $this;
     }
 
-    public function setDataSources(DataSources $dataSources) : self
+    public function setDataSources(ClassMetadata\DataSources $dataSources) : self
     {
         $this->dataSources = $dataSources;
         return $this;
     }
 
-    public function setConditionals(Conditionals $conditionals) : self
+    public function addDataSource(ClassMetadata\DataSource $dataSource) : self
+    {
+        $this->dataSources->items[] = $dataSource;
+        return $this;
+    }
+
+    public function setConditionals(ClassMetadata\Conditionals $conditionals) : self
     {
         $this->conditionals = $conditionals;
         return $this;
     }
 
-    public function getBeforeUsingLoadedMetadata() : ?Methods
+    public function addConditional(ClassMetadata\Conditional $conditional) : self
+    {
+        $this->conditionals->items[] = $conditional;
+        return $this;
+    }
+
+    public function getBeforeUsingLoadedMetadata() : ?StdClassMetadata\Methods
     {
         return $this->beforeUsingLoadedMetadata;
     }
 
-    public function getAfterUsingLoadedMetadata() : ?Methods
+    public function getAfterUsingLoadedMetadata() : ?StdClassMetadata\Methods
     {
         return $this->afterUsingLoadedMetadata;
     }
 
-    public function getBeforeHydration() : ?Methods
+    public function getBeforeHydration() : ?StdClassMetadata\Methods
     {
         return $this->beforeHydration;
     }
 
-    public function getAfterHydration() : ?Methods
+    public function getAfterHydration() : ?StdClassMetadata\Methods
     {
         return $this->afterHydration;
     }

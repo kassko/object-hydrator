@@ -2,8 +2,8 @@
 
 namespace Big\Hydrator;
 
-use Symfony\Component\ExpressionLanguage\{ExpressionFunction, ExpressionFunctionProviderInterface, ExpressionLanguage};
 use Big\Hydrator\{ClassMetadata, Config, MemberAccessStrategyFactory};
+use Symfony\Component\ExpressionLanguage\{ExpressionFunction, ExpressionFunctionProviderInterface, ExpressionLanguage};
 
 use function sprintf;
 
@@ -23,6 +23,7 @@ class ExpressionFunctionProvider implements ExpressionFunctionProviderInterface
                     return 'object';
                 },
                 function (array $context) {
+                    var_dump('RRRRRRRRRRRRRRRR', array_keys($context));
                     return $context['object'];
                 }
             ),

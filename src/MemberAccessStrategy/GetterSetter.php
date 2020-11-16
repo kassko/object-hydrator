@@ -2,7 +2,7 @@
 
 namespace Big\Hydrator\MemberAccessStrategy;
 
-use Big\Hydrator\{ClassMetadata, PropertyMetadataVersionResolverAwareTrait};
+use Big\Hydrator\{ClassMetadata, CandidatePropertiesResolverAwareTrait};
 
 use function get_class_methods;
 
@@ -14,7 +14,7 @@ use function get_class_methods;
 */
 class GetterSetter implements \Big\Hydrator\MemberAccessStrategyInterface
 {
-    use PropertyMetadataVersionResolverAwareTrait;
+    use CandidatePropertiesResolverAwareTrait;
 
     private $propertyAccessStrategy;
     private $classMetadata;

@@ -42,18 +42,15 @@ class HydratorBuilder
 
         $dataFetcher = new \Big\Hydrator\DataFetcher($methodInvoker);
 
+        $propertyMetadataVersionResolver = new \Big\Hydrator\CandidatePropertiesResolver($expressionEvaluator, $methodInvoker);
+
         $memberAccessStrategyFactory = (
             new \Big\Hydrator\MemberAccessStrategyFactory
-        )->setPropertyMetadataVersionresolver(
-            new \Big\Hydrator\PropertyOptionsMetadataVersionResolver(
-                $expressionEvaluator,
-                $methodInvoker
-            )
-        );
+        )->setCandidatePropertiesResolver($propertyMetadataVersionResolver);
 
         $objectLoadabilityChecker = new \Big\Hydrator\ObjectLoadabilityChecker;
 
-        $hydrator = new \Big\Hydrator\Hydrator(
+        $hydrator = (new \Big\Hydrator\Hydrator(
             $classMetadataLoader,
             $memberAccessStrategyFactory,
             new \Big\Hydrator\IdentityMap($objectLoadabilityChecker),
@@ -67,9 +64,7 @@ class HydratorBuilder
                 $config['service_locator']
             ),
             $config
-        )->setPropertyMetadataVersionresolver(
-            new \Big\Hydrator\PropertyOptionsMetadataVersionResolver($expressionEvaluator, $methodInvoker)
-        );
+        ))->setPropertyMetadataVersionresolver($propertyMetadataVersionResolver);
 
         $logger = isset($config['logger_key']) ? ($config['service_locator'])($config['logger_key']) : null;
         $this->initializeRegistry($hydrator, $logger);

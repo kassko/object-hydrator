@@ -6,15 +6,15 @@ use Big\Hydrator\{ClassMetadata, MemberAccessStrategy, MemberAccessStrategyInter
 
 class MemberAccessStrategyFactory
 {
-    use PropertyMetadataVersionResolverAwareTrait;
+    use CandidatePropertiesResolverAwareTrait;
 
 	public function getterSetter(object $object, ClassMetadata $classMetadata) : MemberAccessStrategyInterface
     {
         $propertyAccessStrategy = $this->property($object, $classMetadata);
 
-        $getterSetterAccessStrategy = new MemberAccessStrategy\GetterSetter(
+        $getterSetterAccessStrategy = (new MemberAccessStrategy\GetterSetter(
             $propertyAccessStrategy
-        )->setPropertyMetadataVersionresolver(
+        ))->setPropertyMetadataVersionresolver(
             $this->propertyMetadataVersionResolver
         );
 

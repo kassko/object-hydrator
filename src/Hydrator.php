@@ -6,7 +6,7 @@ use function array_filter;
 
 class Hydrator
 {
-    use PropertyMetadataVersionResolverAwareTrait;
+    use CandidatePropertiesResolverAwareTrait;
 
     private ClassMetadataLoader $classMetadataLoader;
     private MemberAccessStrategyFactory $memberAccessStrategyFactory;
@@ -59,7 +59,7 @@ class Hydrator
             $object,
             $normalizedData,
             $classMetadata = $this->classMetadataLoader->loadMetadata($object),
-            $classMetadata->getManagedPropertyVersions($propertyName),
+            $classMetadata->getCandidateProperties($propertyName),
             true
         );
     }
@@ -77,8 +77,10 @@ class Hydrator
 
     private function hydrateOriginalProperties(object $object, iterable $normalizedData, ClassMetadata $classMetadata) : void
     {
-        foreach ($classMetadata->getBasicManagedPropertiesVersions() as $propertyVersions) {
-            $property = $this->resolveManagedProperty($propertyVersions->getName(), $classMetadata);
+        foreach ($classMetadata->getBasicCandidatesProperties() as $candidateProperties) {
+            $previousExpressionContext = $this->initExpressionContext($object, $normalizedData, $classMetadata, null);
+
+            $property = $this->resolveManagedProperty($candidateProperties->getName(), $classMetadata);
 
             $this->methodInvoker->invokeVisitorsCallbacks($property->getBeforeUsingLoadedMetadata(), $property);
 
@@ -127,8 +129,8 @@ class Hydrator
             }
         }
 
-        foreach ($classMetadata->getLoadableManagedPropertiesVersions() as $propertyVersions) {
-            $property = $this->resolveManagedProperty($propertyVersions->getName(), $classMetadata);
+        foreach ($classMetadata->getLoadableCandidatesProperties() as $candidateProperties) {
+            $property = $this->resolveManagedProperty($candidateProperties->getName(), $classMetadata);
 
             $this->hydrateLoadableProperty($object, $normalizedData, $classMetadata, $property, $enforceLoading);
         }
@@ -165,7 +167,7 @@ class Hydrator
             $classMetadata
         );
 
-        $this->resetExpressionContext($object, $normalizedData, $classMetadata, $property);
+        //$this->resetExpressionContext($object, $normalizedData, $classMetadata, $property);
 
         $event = $this->methodInvoker->invokeVisitorsCallbacks($classMetadata->getBeforeHydration(), new Event\BeforeHydration($dataSourceNormalizedData));
         $dataSourceNormalizedData = $event->getNormalizedValue();
@@ -210,7 +212,7 @@ class Hydrator
         object $object,
         iterable $normalizedData,
         ClassMetadata $classMetadata,
-        ClassMetadata\Property $property
+        ?ClassMetadata\Property $property
     ) : iterable {
         $previousExpressionContext = $this->expressionContext;
 
@@ -219,7 +221,7 @@ class Hydrator
         $this->expressionContext['class_metadata'] = $classMetadata;
         $this->expressionContext['provider'] = $this->essentialDataProvider->withContext($object, $classMetadata);
 
-        if ($property->hasVariables()) {
+        if ($property && $property->hasVariables()) {
             if (! isset($this->expressionContext['current_variables_stats'])) {
                 $this->expressionContext['current_variables_stats'] = [];
             }
@@ -293,7 +295,6 @@ class Hydrator
                     $modelValue[$normalizedValueItemKey] = $modelValueItem;
                 } else {
                     $this->hydrateScalarModel($modelValueItem, $normalizedValueItem, $property);
-                    var_dump($modelValueItem);
                     $modelValue[$normalizedValueItemKey] = $modelValueItem;
                 }
             }

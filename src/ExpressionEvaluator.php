@@ -20,19 +20,31 @@ class ExpressionEvaluator
     /**
      * @var ExpressionFunctionProviderInterface[]
      */
-    protected array $expressionLanguageProviders;
+    //protected array $expressionLanguageProviders;
 
     public function __construct(ExpressionContext $expressionContext, Config $expressionConfig, ?ExpressionLanguage $expressionLanguage = null)
     {
         $this->expressionContext = $expressionContext;
         $this->expressionConfig = $expressionConfig;
         $this->expressionLanguage = $expressionLanguage;
-        $this->expressionLanguageProviders = null === $expressionLanguage ? [] : [new ExpressionFunctionProvider];
+
+        if ($expressionLanguage) {
+            $expressionLanguage->registerProvider(new ExpressionFunctionProvider);
+        }
+        //$this->expressionLanguageProviders = null === $expressionLanguage ? [] : [new ExpressionFunctionProvider];
     }
 
     public function addExpressionLanguageProvider(ExpressionFunctionProviderInterface $provider)
     {
-        $this->expressionLanguageProviders[] = $provider;
+        if ($expressionLanguage) {
+            $expressionLanguage->registerProvider($provider);
+        } else {
+            throw new \LogicException(
+                'Cannot use the added expression language provider ' .
+                'because symfony/expression-language is not installed.'
+            );
+        }
+        //$this->expressionLanguageProviders[] = $provider;
     }
 
     public function resolveExpressions(array $args) : array
@@ -122,6 +134,8 @@ class ExpressionEvaluator
             );
         }
 
-        return $this->expressionLanguage->evaluate($matches[1], $this->expressionContext->geVariables());
+        //var_dump('OOOOOOOOOO', array_keys($this->expressionContext->getVariables()));
+
+        return $this->expressionLanguage->evaluate($matches[1], $this->expressionContext->getVariables());
     }
 }

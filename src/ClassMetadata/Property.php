@@ -4,7 +4,7 @@ namespace Big\Hydrator\ClassMetadata;
 
 /**
  * @Annotation
- * @Target("PROPERTY")
+ * @Target({"PROPERTY","ANNOTATION"})
  *
  * @author kko
  */
@@ -210,7 +210,7 @@ class Property extends Base
     }
 
     public function setConditional(Conditional $conditional) : self
-    {
+    {var_dump(__METHOD__);
         $this->conditional = $conditional;
         return $this;
     }

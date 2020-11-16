@@ -1,8 +1,9 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Big\Hydrator\ClassMetadata\Conditional;
 
-use Big\StandardClassMetadata\Method;
+use Big\Hydrator\ClassMetadata\Conditional;
+use Big\StandardClassMetadata\Method as StdMethod;
 
 /**
  * @Annotation
@@ -10,19 +11,14 @@ use Big\StandardClassMetadata\Method;
  *
  * @author kko
  */
-class ConditionalMethod extends Conditional
+class Method extends Conditional
 {
     //=== Annotations attributes (must be public) : begin ===//
     /**
      * @internal
-     * @var string
-     */
-    public string $id;
-    /**
-     * @internal
      * @var \Big\StandardClassMetadata\Method
      */
-    public ?Method $method = null;
+    public StdMethod $method;
     //=== Annotations attributes : end ===//
 
     public function isMethod() : bool
@@ -30,7 +26,7 @@ class ConditionalMethod extends Conditional
         return null !== $this->method;
     }
 
-    public function getMethod() : ?Method
+    public function getMethod() : Method
     {
         return $this->method;
     }
