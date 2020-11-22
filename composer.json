@@ -16,6 +16,7 @@
     },
     "require-dev": {
         "doctrine/annotations": "^1.10.4",
+        "fzaninotto/faker": "^1.9.1",
         "phpunit/phpunit":"^9.4",
         "symfony/expression-language": ">3.4"
     },
@@ -34,7 +35,8 @@
         "bin-dir": "bin",
         "platform": {
             "php": "7.4.11"
-        }
+        },
+        "sort-packages": true
     },
     "minimum-stability": "dev",
     "prefer-stable": true

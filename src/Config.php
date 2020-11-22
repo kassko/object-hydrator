@@ -2,15 +2,11 @@
 
 namespace Big\Hydrator;
 
-use ArrayAccess;
-use ArrayIterator;
-use IteratorAggregate;
-
+use function array_key_exists;
 use function is_array;
 use function sprintf;
-use function version_compare;
 
-final class Config implements ArrayAccess, IteratorAggregate
+final class Config implements \ArrayAccess, \IteratorAggregate
 {
     private const PATH_DELIMITER = '.';
 
@@ -50,6 +46,11 @@ final class Config implements ArrayAccess, IteratorAggregate
         return new self($valuesPartition);
     }
 
+    public function getValues()
+    {
+        return $this->values;
+    }
+
     public function getValue(string $key)
     {
         if (! isset($this->values[$key])) {
@@ -72,7 +73,7 @@ final class Config implements ArrayAccess, IteratorAggregate
         foreach ($pathParts as $pathPart) {
             $pathCursor .= $pathCursor ? self::PATH_DELIMITER . $pathPart : $pathPart;
 
-            if (! isset($valuesPartition[$pathPart])) {
+            if (!isset($valuesPartition[$pathPart])) {
                 $message = sprintf(
                     'Cannot get a value for the path "%s" from class metadata config.',
                     $message,
@@ -99,7 +100,10 @@ final class Config implements ArrayAccess, IteratorAggregate
      */
     public function offsetExists($key) : bool
     {
-        return array_key_exists($key, $this->values);
+        if ('service_locator' === $key) {
+            var_dump(__FUNCTION__, 'ICI', $key, $this->values['service_locator'], isset($this->values[$key]));
+        }
+        return isset($this->values[$key]);
     }
 
     /**
@@ -107,19 +111,19 @@ final class Config implements ArrayAccess, IteratorAggregate
      */
     public function offsetGet($key)
     {
-        if ($this->offsetExists($key)) {
+        if (isset($this->values[$key])) {
             return $this->values[$key];
         }
 
-        throw new \RuntimeException(sprintf('No variable registered on key "%s" in expression context.', $key));
+        throw new \RuntimeException(sprintf('Cannot find key "%s" in config.', $key));
     }
 
     /**
      * {@inheritdoc}
      */
-    public function offsetSet($offset, $value) : void
+    public function offsetSet($key, $value) : void
     {
-        $this->addVariable($offset, $value);
+        $this->values[$key] = $value;
     }
 
     /**
@@ -135,6 +139,6 @@ final class Config implements ArrayAccess, IteratorAggregate
      */
     public function getIterator() : \Traversable
     {
-        return new ArrayIterator($this->values);
+        return new \ArrayIterator($this->values);
     }
 }

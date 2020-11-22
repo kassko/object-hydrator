@@ -2,6 +2,8 @@
 
 namespace Big\Hydrator;
 
+use Big\Hydrator\PropertyCandidatesResolverAwareTrait;
+
 /**
  * EssentialDataProvider
  *
@@ -9,6 +11,8 @@ namespace Big\Hydrator;
  */
 class EssentialDataProvider
 {
+    use PropertyCandidatesResolverAwareTrait;
+
     private object $object;
     private ClassMetadata $classMetadata;
     private DataFetcher $dataFetcher;
@@ -35,12 +39,20 @@ class EssentialDataProvider
 
     public function getPropertyValue(string $propertyName)
     {
-        return $this->memberAccessStrategyFactory->property($this->object, $this->classMetadata)->getValue($this->object, $propertyName);
+        $property = $this->propertyCandidatesResolver->resolveGoodCandidate(
+            $this->classMetadata->getPropertyCandidates($propertyName)
+        );
+
+        return $this->memberAccessStrategyFactory->property($this->object, $this->classMetadata)->getValue($property);
     }
 
     public function loadPropertyAndGetValue(string $propertyName)
     {
-        return $this->memberAccessStrategyFactory->getterSetter($this->object, $this->classMetadata)->getValue($this->object, $propertyName);
+        $property = $this->propertyCandidatesResolver->resolveGoodCandidate(
+            $this->classMetadata->getPropertyCandidates($propertyName)
+        );
+
+        return $this->memberAccessStrategyFactory->getterSetter($this->object, $this->classMetadata)->getValue($property);
     }
 
     public function resolveService(string $serviceKey)
@@ -48,8 +60,8 @@ class EssentialDataProvider
         if (! isset($this->serviceLocator)) {
             throw new \RuntimeException(
                 sprintf(
-                    'Cannot locate a provider (container, factory ...) for service key "%s". '
-                    . 'You must provide a service locator throw config => "HydratorStarter::config()". ',
+                    'Cannot locate a provider (container, factory ...) for service key "%s".'
+                    . PHP_EOL . 'You must provide a service locator throw config key "psr_container" or "service_provider".',
                     $serviceKey
                 )
             );

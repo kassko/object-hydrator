@@ -19,38 +19,38 @@ use function sprintf;
 class ExpressionContext implements ArrayAccess, IteratorAggregate
 {
     /**
-     * Contains all the context variables.
+     * Contains all the context values.
      * @var array
      */
-    private array $variables = [];
+    private array $values = [];
 
     /**
-     * Return all the context variables.
+     * Return all the context values.
      * @return array
      */
-    public function getVariables() : array
+    public function getValues() : array
     {
-    	return $this->variables;
+    	return $this->values;
     }
 
     /**
-     * Add a variable in the context.
+     * Add a value in the context.
      *
-     * @param string $key A key to store the variable.
-     * @param mixed $value The variable to store.
+     * @param string $key A key to store the value.
+     * @param mixed $value The value to store.
      */
-    public function addVariable($key, $value) : void
+    public function addValue($key, $value) : void
     {
         if (is_null($key) || ! is_string($key)) {
-            throw new \RuntimeException(sprintf('The key where to save your variable in the expression context is invalid. Got "%s".', $key));
+            throw new \RuntimeException(sprintf('The key where to save your value in the expression context is invalid. Got "%s".', $key));
         }
 
-        $this->variables[$key] = $value;
+        $this->values[$key] = $value;
     }
 
     public function flush() : void
     {
-        $this->variables = [];
+        $this->values = [];
     }
 
     /**
@@ -58,7 +58,7 @@ class ExpressionContext implements ArrayAccess, IteratorAggregate
      */
     public function offsetExists($key) : bool
     {
-        return array_key_exists($key, $this->variables);
+        return array_key_exists($key, $this->values);
     }
 
     /**
@@ -67,10 +67,10 @@ class ExpressionContext implements ArrayAccess, IteratorAggregate
     public function offsetGet($key)
     {
         if ($this->offsetExists($key)) {
-            return $this->variables[$key];
+            return $this->values[$key];
         }
 
-        throw new \RuntimeException(sprintf('No variable registered on key "%s" in expression context.', $key));
+        throw new \RuntimeException(sprintf('No value registered on key "%s" in expression context.', $key));
     }
 
     /**
@@ -78,7 +78,7 @@ class ExpressionContext implements ArrayAccess, IteratorAggregate
      */
     public function offsetSet($offset, $value) : void
     {
-        $this->addVariable($offset, $value);
+        $this->addValue($offset, $value);
     }
 
     /**
@@ -86,7 +86,7 @@ class ExpressionContext implements ArrayAccess, IteratorAggregate
      */
     public function offsetUnset($key) : void
     {
-        unset($this->variables[$key]);
+        unset($this->values[$key]);
     }
 
     /**
@@ -94,6 +94,6 @@ class ExpressionContext implements ArrayAccess, IteratorAggregate
      */
     public function getIterator() : \Traversable
     {
-        return new ArrayIterator($this->variables);
+        return new ArrayIterator($this->values);
     }
 }

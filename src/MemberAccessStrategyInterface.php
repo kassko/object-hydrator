@@ -11,7 +11,6 @@ use Big\Hydrator\ClassMetadata;
 */
 interface MemberAccessStrategyInterface
 {
-    public function prepare(object $object, ClassMetadata $classMetadata) : void;
-    public function getValue(object $object, string $fieldName);
-    public function setValue($value, object $object, string $fieldName) : void;
+    public function getValue(ClassMetadata\Property $property);
+    public function setValue($value, ClassMetadata\Property $property) : void;
 }

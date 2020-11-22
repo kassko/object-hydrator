@@ -2,7 +2,7 @@
 
 namespace Big\Hydrator\MemberAccessStrategy;
 
-use Big\Hydrator\{ClassMetadata, CandidatePropertiesResolverAwareTrait};
+use Big\Hydrator\ClassMetadata;
 
 use function get_class_methods;
 
@@ -14,66 +14,76 @@ use function get_class_methods;
 */
 class GetterSetter implements \Big\Hydrator\MemberAccessStrategyInterface
 {
-    use CandidatePropertiesResolverAwareTrait;
-
-    private $propertyAccessStrategy;
+    private $object;
     private $classMetadata;
+    private $reflectionClass;
     private $classMethods;
+    private $propertyAccessStrategy;
 
-    public function __construct(Property $propertyAccessStrategy)
+    public function __construct(object $object, ClassMetadata $classMetadata, Property $propertyAccessStrategy)
     {
+        $this->object = $object;
+        $this->classMetadata = $classMetadata;
+        $this->reflectionClass = $classMetadata->getReflectionClass();
+        $this->classMethods = array_flip(get_class_methods($object));
         $this->propertyAccessStrategy = $propertyAccessStrategy;
     }
 
-    public function prepare(object $object, ClassMetadata $classMetadata) : void
+    public function getValue(ClassMetadata\Property $property)
     {
-        $this->classMetadata = $classMetadata;
-        $this->classMethods = array_flip(get_class_methods($object));
-    }
-
-    public function getValue($object, $propertyName)
-    {
-        $getter = $this->resolveManagedProperty($propertyName, $this->classMetadata)->getGetter();
+        $getter = $property->getGetter();
         if (isset($this->classMethods[$getter])) {
-            return $object->$getter();
+            return $this->object->$getter();
         };
 
-        return $this->propertyAccessStrategy->getValue($object, $propertyName);
+        return $this->propertyAccessStrategy->getValue($property->getName());
     }
 
-    public function setValue($value, object $object, string $propertyName) : void
+    public function setValue($value, ClassMetadata\Property $property) : void
     {
-        $setter = $this->resolveManagedProperty($propertyName, $this->classMetadata)->getSetter();
+        $setter = $property->getSetter();
         if (isset($this->classMethods[$setter])) {
-            $object->$setter($value);
+            $this->object->$setter($value);
         }
 
-        $this->propertyAccessStrategy->setValue($value, $object, $propertyName);
+        $this->propertyAccessStrategy->setValue($value, $property);
     }
 
-    public function setValues(array $collectionValue, object $object, string $propertyName) : void
+    public function setValues(array $collectionValue, ClassMetadata\Property $property) : void
     {
-        $adder = $this->resolveManagedProperty($propertyName, $this->classMetadata)->getAdder();
+        $adder = $property->getAdder();
         if (isset($adder)) {
-            if ($this->resolveManagedProperty($propertyName, $this->classMetadata)->isAssocAdder()) {
+            $nbParameters = count($this->reflectionClass->getMethod($adder)->getParameters());
+            if ($nbParameters === 0 || $nbParameters > 2) {
+                throw new \LogicException(sprintf(
+                    'Cannot hydrate object "%s".' .
+                    PHP_EOL . 'The adder "%s" must contains either 1 (the value to set) or 2 parameters (a key and the value to set).' .
+                    PHP_EOL . 'Given "%d" parameters.',
+                    $this->object,
+                    $adder,
+                    $nbParameters
+                ));
+            }
+
+            if (2 === $nbParameters) {
                 foreach ($collectionValue as $key => $item) {
-                    $object->$adder($key, $item);
+                    $this->object->$adder($key, $item);
                 }
-            } else {
+            } else {//1 parameter, the value.
                 foreach ($collectionValue as $item) {
-                    $object->$adder($item);
+                    $this->object->$adder($item);
                 }
             }
 
             return;
         }
 
-        $setter = $this->resolveManagedProperty($propertyName, $this->classMetadata)->getSetter();
+        $setter = $property->getSetter();
         if (isset($setter)) {
-            $object->$setter($collectionValue);
+            $this->object->$setter($collectionValue);
             return;
         }
 
-        $this->propertyAccessStrategy->setValue($collectionValue, $object, $propertyName);
+        $this->propertyAccessStrategy->setValue($collectionValue, $property);
     }
 }

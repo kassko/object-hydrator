@@ -10,6 +10,7 @@ class PersonService
             case 1:
                 return [
                     'first_name' => 'Dany',
+                    'second_name' => 'Christian',
                     'name' => 'Gomes',
                     'phone' => '01 02 03 04 05',
                 ];

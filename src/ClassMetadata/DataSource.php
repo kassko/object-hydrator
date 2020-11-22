@@ -2,16 +2,16 @@
 
 namespace Big\Hydrator\ClassMetadata;
 
-use Big\StandardClassMetadata\{Method, Methods};
-
 /**
  * @Annotation
  * @Target({"CLASS","ANNOTATION"})
  *
  * @author kko
  */
-class DataSource extends Base
+final class DataSource
 {
+    use Capability\Enabling;
+
     //=== Annotations attributes (must be public) : begin ===//
     /**
      * @internal
@@ -20,7 +20,7 @@ class DataSource extends Base
     public string $id;
     /**
      * @internal
-     * @var \Big\StandardClassMetadata\Method
+     * @var \Big\Hydrator\ClassMetadata\Method
      */
     public Method $method;
     /**
@@ -34,17 +34,17 @@ class DataSource extends Base
     public ?string $fallBackDataSourceRef = null;
     /**
      * @internal
-     * @var \Big\StandardClassMetadata\Methods
+     * @var \Big\Hydrator\ClassMetadata\Methods
      */
     public ?Methods $afterMetadataLoading = null;
     /**
      * @internal
-     * @var \Big\StandardClassMetadata\Methods
+     * @var \Big\Hydrator\ClassMetadata\Methods
      */
     public ?Methods $beforeDataFetching = null;
     /**
      * @internal
-     * @var \Big\StandardClassMetadata\Methods
+     * @var \Big\Hydrator\ClassMetadata\Methods
      */
     public ?Methods $afterDataFetching = null;
     //=== Annotations attributes : end ===//

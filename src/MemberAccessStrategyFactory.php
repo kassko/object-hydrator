@@ -2,32 +2,25 @@
 
 namespace Big\Hydrator;
 
-use Big\Hydrator\{ClassMetadata, MemberAccessStrategy, MemberAccessStrategyInterface};
+use Big\Hydrator\{ClassMetadata, MemberAccessStrategy};
 
 class MemberAccessStrategyFactory
 {
-    use CandidatePropertiesResolverAwareTrait;
-
-	public function getterSetter(object $object, ClassMetadata $classMetadata) : MemberAccessStrategyInterface
+	public function getterSetter(object $object, ClassMetadata $classMetadata) : MemberAccessStrategy\GetterSetter
     {
         $propertyAccessStrategy = $this->property($object, $classMetadata);
 
         $getterSetterAccessStrategy = (new MemberAccessStrategy\GetterSetter(
+            $object,
+            $classMetadata,
             $propertyAccessStrategy
-        ))->setPropertyMetadataVersionresolver(
-            $this->propertyMetadataVersionResolver
-        );
-
-        $getterSetterAccessStrategy->prepare($object, $classMetadata);
+        ));
 
         return $getterSetterAccessStrategy;
     }
 
     public function property(object $object, ClassMetadata $classMetadata) : MemberAccessStrategy\Property
     {
-        $propertyAccessStrategy = new MemberAccessStrategy\Property;
-        $propertyAccessStrategy->prepare($object, $classMetadata);
-
-        return $propertyAccessStrategy;
+        return new MemberAccessStrategy\Property($object, $classMetadata);
     }
 }

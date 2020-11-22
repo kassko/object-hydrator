@@ -4,20 +4,21 @@ namespace Big\Hydrator\ClassMetadata;
 
 /**
  * @Annotation
- * @Target("CLASS")
+ * @Target("ANNOTATION")
  *
  * @author kko
  */
-final class Conditionals
+final class Expression implements DynamicValueInterface
 {
-    use Capability\Enabling;
-
     //=== Annotations attributes (must be public) : begin ===//
     /**
-     * One or more Conditional annotations.
-     *
-     * @var array<\Big\Hydrator\ClassMetadata\Conditional>
+     * @internal
      */
-    public $items = [];
+    public string $value;
     //=== Annotations attributes : end ===//
+
+    public function getValue() : string
+    {
+        return $this->value;
+    }
 }

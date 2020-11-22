@@ -8,6 +8,7 @@ namespace Big\Hydrator\ClassMetadata;
  *
  * @author kko
  */
-class ExcludedProperty extends Base
+final class ExcludedProperty
 {
+    use Capability\Enabling;
 }

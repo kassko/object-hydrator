@@ -1,13 +1,13 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadata;
+namespace Big\Hydrator\ClassMetadata\Capability;
 
 /**
  * @author kko
  */
-abstract class Base
+trait Enabling
 {
-	/**
+    /**
      * @internal
      * @var bool
      */

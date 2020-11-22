@@ -36,22 +36,28 @@ class DoctrineAnnotationLoader extends AbstractDelegatedLoader
         $classLevelAnnotations = $this->getClassLevelAnnotationsByClass($reflectionClass);
         $classOptions = $classLevelAnnotations[ClassMetadata\ClassOptions::class] ?? new ClassMetadata\ClassOptions;
 
-        $classMetadata->setPropertiesExcludedByDefault($classOptions->propertiesExcludedByDefault);
+        $classMetadata->setDefaultHydrateAllProperties($classOptions->defaultHydrateAllProperties);
 
         if (isset($classLevelAnnotations[ClassMetadata\DataSources::class])) {
-            foreach ($classLevelAnnotations[ClassMetadata\DataSources::class] as $dataSource) {
+            $dataSources = new ClassMetadata\DataSources;
+            foreach ($classLevelAnnotations[ClassMetadata\DataSources::class]->items as $dataSource) {
                 if ($dataSource->enabled) {
-                    $classMetadata->addDataSource($dataSource);
+                    $dataSources->items[] = $dataSource;
                 }
             }
+
+            $classMetadata->setDataSources($dataSources);
         }
 
         if (isset($classLevelAnnotations[ClassMetadata\Conditionals::class])) {
-            foreach ($classLevelAnnotations[ClassMetadata\Conditionals::class] as $conditional) {
+            $conditionals = new ClassMetadata\Conditionals;
+            foreach ($classLevelAnnotations[ClassMetadata\Conditionals::class]->items as $conditional) {
                 if ($conditional->enabled) {
-                    $classMetadata->addConditional($conditional);
+                    $conditionals->items[] = $conditional;
                 }
             }
+
+            $classMetadata->setConditionals($conditionals);
         }
 
         //Property level
@@ -63,37 +69,37 @@ class DoctrineAnnotationLoader extends AbstractDelegatedLoader
 
             $propertyLevelAnnotationsByClass = $this->getPropertyLevelAnnotationsByClass($reflectionProperty);
 
-            $candidateProperties = new ClassMetadata\CandidateProperties;
-            $candidateProperties->name = $propertyName;
+            $propertyCandidates = new ClassMetadata\PropertyCandidates;
+            $propertyCandidates->name = $propertyName;
 
             if (isset($propertyLevelAnnotationsByClass[ClassMetadata\Property::class])) {
-                $candidateProperties->items[] = $propertyLevelAnnotationsByClass[ClassMetadata\Property::class];
+                $propertyCandidates->items[] = $propertyLevelAnnotationsByClass[ClassMetadata\Property::class];
             }
 
-            if (isset($propertyLevelAnnotationsByClass[ClassMetadata\CandidateProperties::class])) {
-                if (count($candidateProperties->items) > 0) {
+            if (isset($propertyLevelAnnotationsByClass[ClassMetadata\PropertyCandidates::class])) {
+                if (count($propertyCandidates->items) > 0) {
                     throw new \LogicException(sprintf(
                         'Cannot load doctrine annotations.' .
                         'You must annotate property "%s" with either annotation "%s" or "%s" but not both.' .
                         'Please fix this by removing or disabling (attribute "enabled" to false) one of these annotations.',
                         $propertyName,
                         ClassMetadata\Property::class,
-                        ClassMetadata\CandidateProperties::class
+                        ClassMetadata\PropertyCandidates::class
                     ));
                 }
 
-                $candidateProperties->variables = $propertyLevelAnnotationsByClass[ClassMetadata\CandidateProperties::class]->variables;
 
-                foreach ($propertyLevelAnnotationsByClass[ClassMetadata\CandidateProperties::class] as $candidateProperty) {
+                foreach ($propertyLevelAnnotationsByClass[ClassMetadata\PropertyCandidates::class] as $candidateProperty) {
                     if ($candidateProperty->enabled) {
-                        $candidateProperties->items[] = $candidateProperty;
+                        $propertyCandidates->name = $propertyName;
+                        $propertyCandidates->items[] = $candidateProperty;
+                        $propertyCandidates->variables = $propertyLevelAnnotationsByClass[ClassMetadata\PropertyCandidates::class]->variables;
                     }
                 }
             }
 
-            if (count($candidateProperties->items) > 0) {
-                $property = $propertyLevelAnnotationsByClass[ClassMetadata\Property::class];
-                $classMetadata->addExplicitlyIncludedProperty($propertyName, $candidateProperties);
+            if (count($propertyCandidates->items) > 0) {
+                $classMetadata->addExplicitlyIncludedProperty($propertyName, $propertyCandidates);
             } elseif (isset($propertyLevelAnnotationsByClass[ClassMetadata\ExcludedProperty::class])) {
                 $property = $propertyLevelAnnotationsByClass[ClassMetadata\ExcludedProperty::class];
                 $classMetadata->addExplicitlyExcludedProperty($propertyName, $property);

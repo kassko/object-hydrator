@@ -2,6 +2,7 @@
 
 namespace Big\Hydrator;
 
+use Big\Hydrator\ClassMetadata;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 
 use function get_class;
@@ -17,10 +18,6 @@ class ExpressionEvaluator
     private ExpressionContext $expressionContext;
     private Config $expressionConfig;
     private ?ExpressionLanguage $expressionLanguage;
-    /**
-     * @var ExpressionFunctionProviderInterface[]
-     */
-    //protected array $expressionLanguageProviders;
 
     public function __construct(ExpressionContext $expressionContext, Config $expressionConfig, ?ExpressionLanguage $expressionLanguage = null)
     {
@@ -31,7 +28,6 @@ class ExpressionEvaluator
         if ($expressionLanguage) {
             $expressionLanguage->registerProvider(new ExpressionFunctionProvider);
         }
-        //$this->expressionLanguageProviders = null === $expressionLanguage ? [] : [new ExpressionFunctionProvider];
     }
 
     public function addExpressionLanguageProvider(ExpressionFunctionProviderInterface $provider)
@@ -44,7 +40,6 @@ class ExpressionEvaluator
                 'because symfony/expression-language is not installed.'
             );
         }
-        //$this->expressionLanguageProviders[] = $provider;
     }
 
     public function resolveExpressions(array $args) : array
@@ -118,9 +113,17 @@ class ExpressionEvaluator
 
     public function resolveAdvancedExpression($arg)
     {
+        /*
         $expressionDetected = preg_match('/expr\((.+)\)/', $arg, $matches);
 
         if (1 !== $expressionDetected) {
+            return $arg;
+        }
+
+        //$expression = $matches[1];
+        */
+
+        if (! $arg instanceof ClassMetadata\Expression) {
             return $arg;
         }
 
@@ -128,14 +131,12 @@ class ExpressionEvaluator
             throw new Exception\NotProvidedExpressionEvaluatorException(
                 sprintf(
                     'Cannot resolve such expression "%s" in metadata of class "%s". You must install the component "symfony/expression-language".',
-                    $matches[1],
+                    $expression->getValue(),
                     get_class($this->expressionContext['object'])
                 )
             );
         }
 
-        //var_dump('OOOOOOOOOO', array_keys($this->expressionContext->getVariables()));
-
-        return $this->expressionLanguage->evaluate($matches[1], $this->expressionContext->getVariables());
+        return $this->expressionLanguage->evaluate($expression->getValue(), $this->expressionContext->getValues());
     }
 }

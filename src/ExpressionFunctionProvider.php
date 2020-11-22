@@ -23,7 +23,6 @@ class ExpressionFunctionProvider implements ExpressionFunctionProviderInterface
                     return 'object';
                 },
                 function (array $context) {
-                    var_dump('RRRRRRRRRRRRRRRR', array_keys($context));
                     return $context['object'];
                 }
             ),

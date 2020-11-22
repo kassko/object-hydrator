@@ -12,54 +12,57 @@ use Big\Hydrator\MemberAccessStrategy\Exception\NotFoundMemberException;
 */
 class Property implements \Big\Hydrator\MemberAccessStrategyInterface
 {
+    private $object;
     private $reflectionClass;
 
-    public function prepare(object $object, ClassMetadata $classMetadata) : void
+    public function __construct(object $object, ClassMetadata $classMetadata)
     {
+        $this->object = $object;
         $this->reflectionClass = $classMetadata->getReflectionClass();
     }
 
-    public function getValue(object $object, string $fieldName)
+    public function getValue(ClassMetadata\Property $property)
     {
-        return $this->doGetValue($object, $fieldName);
+        return $this->doGetValue($property);
     }
 
-    public function setValue($value, object $object, string $fieldName) : void
+    public function setValue($value, ClassMetadata\Property $property) : void
     {
-        if (! isset($fieldName)) {
+        $propertyName = $property->getName();
+        if (! isset($propertyName)) {
             return;
         }
 
-        $this->doSetValue($fieldName, $object, $value);
+        $this->doSetValue($propertyName, $value);
     }
 
-    private function doGetValue(object $object, string $fieldName)
+    private function doGetValue(string $propertyName)
     {
-        $reflProperty = $this->getAccessibleProperty($fieldName);
+        $reflProperty = $this->getAccessibleProperty($propertyName);
         if (false === $reflProperty) {
-            throw new NotFoundMemberException(sprintf('Not found member "%s::%s"', get_class($object), $fieldName));
+            throw new NotFoundMemberException(sprintf('Not found member "%s::%s"', get_class($this->object), $propertyName));
         }
 
-        return $reflProperty->getValue($object);
+        return $reflProperty->getValue($this->object);
     }
 
-    private function doSetValue(string $fieldName, object $object, $value) : void
+    private function doSetValue(string $propertyName, $value) : void
     {
-        $reflProperty = $this->getAccessibleProperty($fieldName);
+        $reflProperty = $this->getAccessibleProperty($propertyName);
         if (false === $reflProperty) {
             return;
         }
 
-        $reflProperty->setValue($object, $value);
+        $reflProperty->setValue($this->object, $value);
     }
 
-    private function getAccessibleProperty(string $fieldName) : \ReflectionProperty
+    private function getAccessibleProperty(string $propertyName) : \ReflectionProperty
     {
-        if (! $this->reflectionClass->hasProperty($fieldName)) {
+        if (! $this->reflectionClass->hasProperty($propertyName)) {
             return false;
         }
 
-        $reflProperty = $this->reflectionClass->getProperty($fieldName);
+        $reflProperty = $this->reflectionClass->getProperty($propertyName);
         if (! $reflProperty->isPublic()) {
             $reflProperty->setAccessible(true);
         }

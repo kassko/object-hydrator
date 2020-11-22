@@ -16,6 +16,7 @@ class HydratorBuilder
     public function build() : \Big\Hydrator\Hydrator
     {
         $config = new \Big\Hydrator\Config($this->getValidatedConfig());
+        $configValues = $config->getValues();
 
         $classMetadataLoader = new \Big\Hydrator\ClassMetadataLoader(
             (new \Big\Hydrator\LoaderResolver)->addLoader(
@@ -37,16 +38,15 @@ class HydratorBuilder
         );
 
         $methodInvoker = new \Big\Hydrator\MethodInvoker($expressionEvaluator);
-
-        $methodInvoker->setServiceLocator($config['service_locator']);
+        if (isset($configValues['service_locator'])) {
+            $methodInvoker->setServiceLocator($config['service_locator']);
+        }
 
         $dataFetcher = new \Big\Hydrator\DataFetcher($methodInvoker);
 
-        $propertyMetadataVersionResolver = new \Big\Hydrator\CandidatePropertiesResolver($expressionEvaluator, $methodInvoker);
+        $propertyCandidatesResolver = new \Big\Hydrator\PropertyCandidatesResolver($expressionEvaluator, $methodInvoker);
 
-        $memberAccessStrategyFactory = (
-            new \Big\Hydrator\MemberAccessStrategyFactory
-        )->setCandidatePropertiesResolver($propertyMetadataVersionResolver);
+        $memberAccessStrategyFactory = (new \Big\Hydrator\MemberAccessStrategyFactory);
 
         $objectLoadabilityChecker = new \Big\Hydrator\ObjectLoadabilityChecker;
 
@@ -58,13 +58,14 @@ class HydratorBuilder
             $dataFetcher,
             $methodInvoker,
             $expressionContext,
-            new \Big\Hydrator\EssentialDataProvider(
+            (new \Big\Hydrator\EssentialDataProvider(
                 $dataFetcher,
                 $memberAccessStrategyFactory,
-                $config['service_locator']
-            ),
+                $configValues['service_locator'] ? $config['service_locator'] : null
+            ))->setPropertyCandidatesResolver($propertyCandidatesResolver),
+            $expressionEvaluator,
             $config
-        ))->setPropertyMetadataVersionresolver($propertyMetadataVersionResolver);
+        ))->setPropertyCandidatesResolver($propertyCandidatesResolver);
 
         $logger = isset($config['logger_key']) ? ($config['service_locator'])($config['logger_key']) : null;
         $this->initializeRegistry($hydrator, $logger);
@@ -104,18 +105,27 @@ class HydratorBuilder
             $this->configs
         );
 
-        $this->finalizeConfig($validatedConfig);
-
-        return $validatedConfig;
+        return $this->finalizeConfig($validatedConfig);
     }
 
-    private function finalizeConfig(array &$config)
+    private function finalizeConfig(array $config) : array
     {
-        $this->completeExpressionConfig($config['data_source_expressions']);
-        $this->resolveServiceLocatorConfig($config);
+        $config['data_source_expressions'] = $this->completeExpressionConfig($config['data_source_expressions']);
+        $config = $this->resolveServiceLocatorConfig($config);
+
+        if (isset($config['logger_key']) && !isset($config['service_locator'])) {
+            throw new \LogicException(sprintf(
+                'Cannot validate configuration.' .
+                PHP_EOL . 'As you specified a logger key, you must provide a service locator' .
+                PHP_EOL . 'to locate the logger service and resolve it.' .
+                PHP_EOL . 'The key "%s" required "%s".'
+            ));
+        }
+
+        return $config;
     }
 
-    private function completeExpressionConfig(array &$expressionConfig) : void
+    private function completeExpressionConfig(array $expressionConfig) : array
     {
         foreach ($expressionConfig['keywords'] as $key => $item) {
             $expressionConfig['keywords'][$key . '_size'] = strlen($item);
@@ -124,17 +134,20 @@ class HydratorBuilder
         foreach ($expressionConfig['markers'] as $key => $item) {
             $expressionConfig['markers'][$key . '_size'] = strlen($item);
         }
+
+        return $expressionConfig;
     }
 
-    private function resolveServiceLocatorConfig(array &$config) : void
+    private function resolveServiceLocatorConfig(array $config) : array
     {
+        $config['service_locator'] = null;
         $count = 0;
 
         if (isset($config['psr_container'])) {
             if (null !== $config['psr_container'] && ! $config['psr_container'] instanceof \Psr\Container\ContainerInterface) {
                 throw new \LogicException(sprintf(
                     'Cannot configure path "big_hydrator.psr_container".' .
-                    'The value set to this path must be an instance of "%s". Given type "%s".',
+                    PHP_EOL . 'The value set to this path must be an instance of "%s". Given type "%s".',
                     \Psr\Container\ContainerInterface::class,
                     is_object($config) ? get_class($config) : gettype($config)
                 ));
@@ -143,26 +156,28 @@ class HydratorBuilder
             unset($config['psr_container']);
             $count++;
 
-            return;
+            return $config;
         }
 
         if (isset($config['service_provider'])) {
             if ($count) {
                 throw new \LogicException(sprintf(
                     'Cannot configure path "big_hydrator.service_provider" section.' .
-                    'You must configure either "big_hydrator.psr_container" or "big_hydrator.service_provider" but not both pathes.'
+                    PHP_EOL . 'You must configure either "big_hydrator.psr_container" or "big_hydrator.service_provider" but not both pathes.'
                 ));
             }
             if (null !== $config['service_provider'] && ! is_callable($config['service_provider'])) {
                 throw new \LogicException(sprintf(
                     'Cannot configure the key "big_hydrator.service_provider".' .
-                    'The value set to this key must be a callable. Given type "%s".',
+                    PHP_EOL . 'The value set to this key must be a callable. Given type "%s".',
                     is_object($config) ? get_class($config) : gettype($config)
                 ));
             }
             $config['service_locator'] = $config['service_provider'];
             unset($config['service_provider']);
         }
+
+        return $config;
     }
 }
 

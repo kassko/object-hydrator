@@ -2,10 +2,12 @@
 
 namespace Big\Hydrator;
 
-use Big\StandardClassMetadata as StdClassMetadata;
+use Big\Hydrator\ClassMetadata;
 use Psr\Container\ContainerInterface;
 
+use function is_callable;
 use function method_exists;
+use function sprintf;
 
 class MethodInvoker
 {
@@ -33,7 +35,7 @@ class MethodInvoker
         return $this;
     }
 
-    public function invokeMethod(?StdClassMetadata\Method $method, array $args = [])
+    public function invokeMethod(?ClassMetadata\Method $method, array $args = [])
     {
         if (null === $method) {
             return null;
@@ -88,7 +90,7 @@ class MethodInvoker
         return $data;
     }
 
-    public function invokeVisitorsCallbacks(?StdClassMetadata\Methods $methods, ?object $event = null) : ?object
+    public function invokeVisitorsCallbacks(?ClassMetadata\Methods $methods, ?object $event = null) : ?object
     {
         if (null === $methods) {
             return $event;
@@ -101,7 +103,7 @@ class MethodInvoker
         return $event;
     }
 
-    public function invokeVisitorCallback(?StdClassMetadata\Method $method, ?object $event = null) : ?object
+    public function invokeVisitorCallback(?ClassMetadata\Method $method, ?object $event = null) : ?object
     {
         if (null === $method) {
             return $event;

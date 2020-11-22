@@ -8,9 +8,11 @@ namespace Big\Hydrator\ClassMetadata;
  *
  * @author kko
  */
-class DataSources extends Base
+final class DataSources
 {
-	//=== Annotations attributes (must be public) : begin ===//
+    use Capability\Enabling;
+
+    //=== Annotations attributes (must be public) : begin ===//
     /**
      * One or more DataSource annotations.
      *

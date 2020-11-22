@@ -2,10 +2,8 @@
 
 namespace Big\HydratorTest;
 
-use Big\Hydrator\{ClassMetadata as BHY, DataFetcher, Hydrator, HydratorBuilder};
-use Big\StandardClassMetadata as BSTD;
+use Big\Hydrator\{ClassMetadata as BHY, HydratorBuilder};
 use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerInterface;
 
 class HydratorTest extends TestCase
 {
@@ -14,6 +12,14 @@ class HydratorTest extends TestCase
      */
     public function basic()
     {
+        $this->assertTrue(true);
+    }
+
+    /**
+     * test
+     */
+    public function basic2()
+    {
         $ids = [1, 2];
 
         foreach ($ids as $id) {
@@ -21,24 +27,24 @@ class HydratorTest extends TestCase
              * @BHY\DataSources({
              *      @BHY\DataSource(
              *          id="nameSource",
-             *          method=@BSTD\Method(class="Big\HydratorTest\Fixture\PersonService", name="getData", args={"#id"}),
+             *          method=@BHY\Method(class="Big\HydratorTest\Fixture\PersonService", name="getData", args={"#id"}),
              *          indexedByPropertiesKeys=true
              *      ),
              *      @BHY\DataSource(
              *          id="emailSource",
-             *          method=@BSTD\Method(class="Big\HydratorTest\Fixture\EmailService", name="getData", args={"#id"})
+             *          method=@BHY\Method(class="Big\HydratorTest\Fixture\EmailService", name="getData", args={"#id"})
              *      )
              * })
              *
              *
              * @BHY\Conditionals({
-             *      @BHY\Conditional\Expression(
+             *      @BHY\Conditional(
              *          id="lazyLoadableCond",
-             *          expression="expr(object.getId() == 1)",
+             *          value=@BHY\Expression(value="object.getId() == 1")
              *      ),
-             *      @BHY\Conditional\Method(
+             *      @BHY\Conditional(
              *          id="privateEmailCond",
-             *          method=@BSTD\Method(
+             *          value=@BHY\Method(
              *              class="Big\HydratorTest\Fixture\MailConditionnalService",
              *              name="isPrivateMail"
              *          )
@@ -50,14 +56,15 @@ class HydratorTest extends TestCase
 
                 private $id;
                 /**
-                 * @BHY\CandidateProperties({
-                 *      @BHY\Property(conditionalRef="lazyLoadableCond", keyInRawData="first_name", dataSourceRef="nameSource", lazyLoaded=false)
-                 *      @BHY\Property(keyInRawData="first_name", dataSourceRef="nameSource", lazyLoaded=true)
+                 * @BHY\PropertyCandidates(enabled=false, items={
+                 *      @BHY\Property(enabled=false, conditionalRef="lazyLoadableCond", keyInRawData="first_name", dataSourceRef="nameSource", loading="EAGER", _keyInRawData=@BHY\Expression("second_name")),
+                 *      @BHY\Property(_keyInRawData=@BHY\Expression(value="8"), dataSourceRef="nameSource", loading="EAGER")
                  * })
+                 * @BHY\Property(_keyInRawData=@BHY\Expression(value="first_name"), dataSourceRef="nameSource", loading="EAGER")
                  */
                 private $name;
                 /**
-                 * @BHY\Property(dataSourceRef="emailSource", lazyLoaded=false)
+                 * @BHY\Property(dataSourceRef="emailSource", loading="EAGER")
                  */
                 private $email;
 

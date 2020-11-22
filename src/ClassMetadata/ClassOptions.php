@@ -8,7 +8,9 @@ namespace Big\Hydrator\ClassMetadata;
  *
  * @author kko
  */
-class ClassOptions extends Base
+final class ClassOptions
 {
-    public $propertiesExcludedByDefault = false;
+    use Capability\Enabling;
+
+    public $defaultHydrateAllProperties = true;
 }

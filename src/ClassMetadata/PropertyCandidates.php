@@ -4,12 +4,14 @@ namespace Big\Hydrator\ClassMetadata;
 
 /**
  * @Annotation
- * @Target({"CLASS","PROPERTY"})
+ * @Target("PROPERTY")
  *
  * @author kko
  */
-class CandidateProperties extends Base
+final class PropertyCandidates
 {
+    use Capability\Enabling;
+
 	//=== Annotations attributes (must be public) : begin ===//
     /**
      * One or more DataSource annotations.
@@ -21,7 +23,7 @@ class CandidateProperties extends Base
      * @internal
      * @var string
      */
-    private string $name;
+    public string $name;
     /**
      * @internal
      * @var array

@@ -18,7 +18,11 @@ class ClassMetadata
      * @internal
      * @var bool
      */
-    public bool $propertiesExcludedByDefault = false;
+    public bool $defaultHydrateAllProperties = true;
+    /**
+     * @internal
+     */
+    public ?string $defaultAdderNameFormat = 'add%sItem';
     /**
      * @internal
      * @var \Big\Hydrator\ClassMetadata\Methods
@@ -44,9 +48,9 @@ class ClassMetadata
     private array $explicitlyExcludedProperties = [];
     //=== Original metadata: end ===//
 
-    private array $candidatesProperties = [];
-    private array $basicCandidatesProperties = [];
-    private array $loadableCandidatesProperties = [];
+    private array $propertiesCandidates = [];
+    private array $basicPropertiesCandidates = [];
+    private array $loadablePropertiesCandidates = [];
     private ClassMetadata\DataSources $dataSources;
     private ClassMetadata\Conditionals $conditionals;
     private \ReflectionClass $reflectionClass;
@@ -67,19 +71,19 @@ class ClassMetadata
         $this->compute();
     }
 
-    public function getBasicCandidatesProperties() : array
+    public function getBasicPropertiesCandidates() : array
     {
-        return $this->basicCandidatesProperties;
+        return $this->basicPropertiesCandidates;
     }
 
-    public function getLoadableCandidatesProperties() : array
+    public function getLoadablePropertiesCandidates() : array
     {
-        return $this->loadableCandidatesProperties;
+        return $this->loadablePropertiesCandidates;
     }
 
-    public function getCandidateProperties($propertyName) : ClassMetadata\CandidateProperties
+    public function getPropertyCandidates($propertyName) : ClassMetadata\PropertyCandidates
     {
-        return $this->candidatesProperties[$propertyName];
+        return $this->propertiesCandidates[$propertyName];
     }
 
     public function findDataSource(string $id) : ClassMetadata\DataSource
@@ -126,36 +130,65 @@ class ClassMetadata
 
     private function compileProperties() : void
     {
-        if ($this->propertiesExcludedByDefault) {
+        if ($this->defaultHydrateAllProperties) {//default hydrate ALL properties except those specified
             foreach ($this->reflectionClass->getProperties() as $reflectionProperty) {
-                if (isset($this->explicitlyIncludedProperties[$name = $reflectionProperty->getName()])) {//Property is explicitly included with given config and so managed.
-                    foreach ($this->explicitlyIncludedProperties[$name] as $candidateProperty) {
-                        $candidateProperty->compile($reflectionProperty);
-                    }
-                    $this->candidatesProperties[$name] = $this->explicitlyIncludedProperties[$name];
+                if ('__registered' === ($name = $reflectionProperty->getName())) {
+                    continue;
                 }
 
-                //Properties which are not explicitly included are not managed.
-            }
-        } else {
-            foreach ($this->reflectionClass->getProperties() as $reflectionProperty) {
-                if (isset($this->explicitlyIncludedProperties[$name = $reflectionProperty->getName()])) {//Property is explicitly included with given config and so managed.
-                    foreach ($this->explicitlyIncludedProperties[$name] as $candidateProperty) {
-                        $candidateProperty->compile($reflectionProperty);
+                if (isset($this->explicitlyIncludedProperties[$name])) {
+                    //Property has a config.
+                    //We will hydrate it.
+                    foreach ($this->explicitlyIncludedProperties[$name]->items as $candidateProperty) {
+                        $candidateProperty->compile($reflectionProperty, [
+                            'default_adder_name_format' => $this->defaultAdderNameFormat
+                        ]);
                     }
-                    $this->candidatesProperties[$name] = $this->explicitlyIncludedProperties[$name];
-                } elseif (! isset($this->explicitlyExcludedProperties[$name = $reflectionProperty->getName()])) {//Property is implicitly included with a default config and so managed.
-                    $candidateProperties = new ClassMetadata\CandidateProperties;
-                    $candidateProperties->items[] = (new ClassMetadata\Property)->compile($reflectionProperty);
+
+                    $this->propertiesCandidates[$name] = $this->explicitlyIncludedProperties[$name];
+                } elseif (! isset($this->explicitlyExcludedProperties[$name])) {
+                    //Property has no config .
+                    //We will hydrate it because we default hydrate a property except if it is not explicitly excluded.
+                    //We create a default config.
+                    $propertyCandidates = new ClassMetadata\PropertyCandidates;
+                    $propertyCandidates->name = $name;
+                    $propertyCandidates->items[] = (new ClassMetadata\Property)->compile(
+                        $reflectionProperty, [
+                            'default_adder_name_format' => $this->defaultAdderNameFormat
+                        ]
+                    );
+
+                    $this->propertiesCandidates[$name] = $propertyCandidates;
                 }
+            }
+        } else {//default hydrate NO property except those specified
+            foreach ($this->reflectionClass->getProperties() as $reflectionProperty) {
+                if ('__registered' === ($name = $reflectionProperty->getName())) {
+                    continue;
+                }
+
+                if (isset($this->explicitlyIncludedProperties[$name])) {
+                    //Property has a config.
+                    //We will hydrate it.
+                    foreach ($this->explicitlyIncludedProperties[$name]->items as $candidateProperty) {
+                        $candidateProperty->compile($reflectionProperty, [
+                            'default_adder_name_format' => $this->defaultAdderNameFormat
+                        ]);
+                    }
+
+                    $this->propertiesCandidates[$name] = $this->explicitlyIncludedProperties[$name];
+                }
+
+                //Property has no config.
+                //We ignore it because we default ignore all properties.
             }
         }
     }
 
     private function compilePropertiesDataSources() : void
     {
-        foreach ($this->candidatesProperties as $candidateProperties) {
-            foreach ($candidateProperties->items as $candidateProperty) {
+        foreach ($this->propertiesCandidates as $propertyCandidates) {
+            foreach ($propertyCandidates->items as $candidateProperty) {
                 if ($candidateProperty->hasDataSourceRef() && null !== ($dataSource = $this->findDataSource($candidateProperty->getDataSourceRef()))) {
 
                     //Move this in class "Method"
@@ -170,14 +203,15 @@ class ClassMetadata
 
     private function compilePropertiesConditionals() : void
     {
-        foreach ($this->candidatesProperties as $candidateProperties) {
-            foreach ($candidateProperties->items as $candidateProperty) {
+        foreach ($this->propertiesCandidates as $propertyCandidates) {
+            foreach ($propertyCandidates->items as $candidateProperty) {
                 if ($candidateProperty->hasConditionalRef() && null !== ($conditional = $this->findConditional($candidateProperty->getConditionalRef()))) {
 
                     //Move this in class "Method"
-                    if ($conditional instanceof Conditional\Method) {
-                        $reflClass = new \ReflectionClass($conditional->getMethod()->getClass());
-                        $conditional->getMethod()->setReflector($reflClass->getMethod($conditional->getMethod()->getName()));
+                    $conditionalValue = $conditional->getValue();
+                    if ($conditionalValue instanceof Conditional\Method) {
+                        $reflClass = new \ReflectionClass($conditionalValue->getClass());
+                        $conditionalValue->setReflector($reflClass->getMethod($conditionalValue->getName()));
                     }
 
                     $candidateProperty->setConditional($conditional);
@@ -188,43 +222,53 @@ class ClassMetadata
 
     private function compute() : void
     {
-        $this->computeBasicManagedPropertiesVersions();
-        $this->computeLoadableManagedPropertiesVersions();
+        $this->computeBasicPropertyCandidates();
+        $this->computeLoadablePropertyCandidates();
     }
 
-    private function computeBasicManagedPropertiesVersions() : void
+    private function computeBasicPropertyCandidates() : void
     {
-        foreach ($this->candidatesProperties as $propertyName => $candidateProperties) {
-            $basicCandidateProperties = new ClassMetadata\CandidateProperties;
-            $basicCandidateProperties->name = $propertyName;
-            $basicCandidateProperties->variables = $candidateProperties->variables;
-            $basicCandidateProperties->items = array_filter($candidateProperties->items, fn($property) => ! $property->hasDataSource());
+        foreach ($this->propertiesCandidates as $propertyName => $propertyCandidates) {
+            $basicPropertyCandidatesItems = array_filter($propertyCandidates->items, fn($property) => ! $property->hasDataSource());
+            if (! count($basicPropertyCandidatesItems)) {
+                continue;
+            }
 
-            $this->basicCandidatesProperties[$propertyName] = $basicCandidateProperties;
+            $basicPropertyCandidates = new ClassMetadata\PropertyCandidates;
+            $basicPropertyCandidates->name = $propertyName;
+            $basicPropertyCandidates->variables = $propertyCandidates->variables;
+            $basicPropertyCandidates->items = $basicPropertyCandidatesItems;
+
+            $this->basicPropertiesCandidates[$propertyName] = $basicPropertyCandidates;
         }
     }
 
-    private function computeLoadableManagedPropertiesVersions() : void
+    private function computeLoadablePropertyCandidates() : void
     {
-        foreach ($this->candidatesProperties as $propertyName => $candidateProperties) {
-            $loadableCandidateProperties = new ClassMetadata\CandidateProperties;
-            $loadableCandidateProperties->name = $propertyName;
-            $loadableCandidateProperties->variables = $candidateProperties->variables;
-            $loadableCandidateProperties->items = array_filter($candidateProperties->items, fn($property) => ! $property->hasDataSource());
+        foreach ($this->propertiesCandidates as $propertyName => $propertyCandidates) {
+            $loadablePropertyCandidatesItems = array_filter($propertyCandidates->items, fn($property) => $property->hasDataSource());
+            if (! count($loadablePropertyCandidatesItems)) {
+                continue;
+            }
 
-            $this->loadableCandidatesProperties[$propertyName] = $loadableCandidateProperties;
+            $loadablePropertyCandidates = new ClassMetadata\PropertyCandidates;
+            $loadablePropertyCandidates->name = $propertyName;
+            $loadablePropertyCandidates->variables = $propertyCandidates->variables;
+            $loadablePropertyCandidates->items = $loadablePropertyCandidatesItems;
+
+            $this->loadablePropertiesCandidates[$propertyName] = $loadablePropertyCandidates;
         }
     }
 
-    public function setPropertiesExcludedByDefault(bool $value = true) : self
+    public function setDefaultHydrateAllProperties(bool $value) : self
     {
-        $this->propertiesExcludedByDefault = $value;
+        $this->defaultHydrateAllProperties = $value;
         return $this;
     }
 
-    public function addExplicitlyIncludedProperty(string $propertyName, ClassMetadata\CandidateProperties $candidateProperties) : self
+    public function addExplicitlyIncludedProperty(string $propertyName, ClassMetadata\PropertyCandidates $propertyCandidates) : self
     {
-        $this->explicitlyIncludedProperties[$propertyName] = $candidateProperties;
+        $this->explicitlyIncludedProperties[$propertyName] = $propertyCandidates;
         return $this;
     }
 
@@ -240,11 +284,11 @@ class ClassMetadata
         return $this;
     }
 
-    public function addDataSource(ClassMetadata\DataSource $dataSource) : self
+    /*public function addDataSource(ClassMetadata\DataSource $dataSource) : self
     {
         $this->dataSources->items[] = $dataSource;
         return $this;
-    }
+    }*/
 
     public function setConditionals(ClassMetadata\Conditionals $conditionals) : self
     {
@@ -252,11 +296,11 @@ class ClassMetadata
         return $this;
     }
 
-    public function addConditional(ClassMetadata\Conditional $conditional) : self
+    /*public function addConditional(ClassMetadata\Conditional $conditional) : self
     {
         $this->conditionals->items[] = $conditional;
         return $this;
-    }
+    }*/
 
     public function getBeforeUsingLoadedMetadata() : ?StdClassMetadata\Methods
     {

@@ -8,17 +8,18 @@ namespace Big\Hydrator\ClassMetadata;
  *
  * @author kko
  */
-class Property extends Base
+final class Property
 {
+    use Capability\Enabling;
+
+    private const LOADING_LAZY = 'LAZY';
+    private const LOADING_EAGER = 'EAGER';
+
     //=== Annotations attributes (must be public) : begin ===//
     /**
      * @internal
      */
     public ?string $keyInRawData = null;
-    /**
-     * @internal
-     */
-    //public ?string $name = null;
     /**
      * @internal
      */
@@ -34,6 +35,10 @@ class Property extends Base
     /**
      * @internal
      */
+    public bool $hydrateRawData = true;
+    /**
+     * @internal
+     */
     public ?string $dataSourceRef = null;
     /**
      * @internal
@@ -41,9 +46,9 @@ class Property extends Base
     public ?string $conditionalRef = null;
     /**
      * @internal
-     * @var bool
+     * @var string
      */
-    public bool $lazyLoaded = true;
+    public string $loading = self::LOADING_LAZY;
     /**
      * @internal
      */
@@ -63,7 +68,7 @@ class Property extends Base
     /**
      * @internal
      */
-    public bool $assocAdder = false;
+    public string $dynamicAttributeMarker = '_';
     /**
      * @internal
      * @var array
@@ -102,10 +107,83 @@ class Property extends Base
      */
     public ?Methods $afterSettingHydratedValue = null;
 
+    private string $name;
+    private ?string $adderNameFormat = null;
     private ?DataSource $dataSource = null;
+    private ?Conditional $conditional = null;
     private array $methods = [];
 
-    public function compile(\ReflectionProperty $reflectionProperty) : self
+    private array $dynamicAttributes = [];
+    private array $dynamicAttributesMapping = [];
+    private array $forbiddenDynamicAttributes;
+
+    public function __construct(array $data = [])
+    {
+        foreach ($data as $key => $datum) {
+            $this->$key = $datum;
+        }
+
+        $this->forbiddenDynamicAttributes = [
+            $this->dynamicAttributeMarker . 'conditionalRef'
+        ];
+    }
+
+    public function __set(string $name , $value) : void
+    {
+        if ($this->dynamicAttributeMarker !== $name[0]) {
+            throw new \LogicException(sprintf(
+                'Cannot set property "%s::%s" because it does not exists.',
+                __CLASS__,
+                $name
+            ));
+        }
+
+        if (isset($this->forbiddenDynamicAttributes[$name])) {
+            throw new \LogicException(sprintf(
+                'Cannot set such dynamic property "%s::%s" because this dynamic property is forbidden.',
+                __CLASS__,
+                $name
+            ));
+        }
+
+        if (! $value instanceof DynamicValueInterface) {
+            throw new \LogicException(sprintf(
+                'Cannot set dynamic property "%s::%s" with such value because the value must be an instance of "%s" as "%s" or "%s".',
+                __CLASS__,
+                $name,
+                DynamicValueInterface::class,
+                Expression::class,
+                Method::class
+            ));
+        }
+
+        //@todo Verify $value is an instance of Method Method or Expression and create Expression annotation.
+        $this->dynamicAttributesMapping[$name] = substr($name, 1);
+        $this->dynamicAttributes[$this->dynamicAttributesMapping[$name]] = $value;
+    }
+
+    public function __get(string $name)
+    {
+        if ($this->dynamicAttributeMarker !== $name[0]) {
+            throw new \LogicException(sprintf(
+                'Cannot get attribute "%s::%s" because it does not exists.',
+                __CLASS__,
+                $name
+            ));
+        }
+
+        if (! isset($this->dynamicAttributesMapping[$name])) {
+            throw new \LogicException(sprintf(
+                'Cannot get dynamic attribute "%s::%s" because it does not exists.',
+                __CLASS__,
+                $name
+            ));
+        }
+
+        return $this->dynamicAttributes[$this->dynamicAttributesMapping[$name]];
+    }
+
+    public function compile(\ReflectionProperty $reflectionProperty, array $extraData) : self
     {
         $this->name = $reflectionProperty->getName();
 
@@ -130,18 +208,28 @@ class Property extends Base
             $this->setter = $this->setterise($reflectionProperty->getName());
         }
 
-        if ($this->collection && null === $this->adder) {
-            $this->adder = $this->adderise($reflectionProperty->getName());
+        if ($this->collection) {
+            /*if (null === $this->class) {
+                throw new \LogicException(sprint(
+                    'Cannot interpret properly property "%s" config.' .
+                    . PHP_EOL . 'You must specify "class" attribute.',
+                    $this->name
+                ));
+            }*/
+
+            if (null === $this->adder) {
+                $this->adder = $this->adderise($reflectionProperty->getName(), $extraData['default_adder_name_format']);
+            }
         }
 
         return $this;
     }
 
-    private function setContainingClassMethods(array $methods) : self
+    /*private function setContainingClassMethods(array $methods) : self
     {
         $this->methods = array_flip($methods);
         return $this;
-    }
+    }*/
 
     public function getName() : string
     {
@@ -166,6 +254,11 @@ class Property extends Base
     public function isCollection() : bool
     {
         return $this->collection;
+    }
+
+    public function areRawDataToHydrate() : bool
+    {
+        return $this->hydrateRawData;
     }
 
     public function hasDataSourceRef() : bool
@@ -210,7 +303,7 @@ class Property extends Base
     }
 
     public function setConditional(Conditional $conditional) : self
-    {var_dump(__METHOD__);
+    {
         $this->conditional = $conditional;
         return $this;
     }
@@ -222,7 +315,12 @@ class Property extends Base
 
     public function mustBeLazyLoaded() : bool
     {
-        return $this->lazyLoaded;
+        return self::LOADING_LAZY === $this->loading;
+    }
+
+    public function mustBeEagerLoaded() : bool
+    {
+        return self::LOADING_EAGER === $this->loading;
     }
 
     public function hasDefaultValue() : bool
@@ -305,15 +403,20 @@ class Property extends Base
         return null;
     }
 
-    private function adderise(string $propertyName) : ?string
+    private function adderise(string $propertyName, ?string $defaultAdderNameFormat) : ?string
     {
-        $adder = 'addItem'.ucfirst($propertyName);
+        $adder = sprintf($defaultAdderNameFormat, ucfirst($propertyName));
 
         if (isset($this->methods[$adder])) {
             return $adder;
         }
 
         return null;
+    }
+
+    public function getDynamicAttributes() : array
+    {
+        return $this->dynamicAttributes;
     }
 
     public function getBeforeUsingLoadedMetadata() : ?Methods
