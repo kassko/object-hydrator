@@ -22,7 +22,7 @@ class InnerPhpLoader extends AbstractDelegatedLoader
         return isset($metadataLocation['inner_php']);
     }
 
-    protected function doLoadMetadata(object $object) : ClassMetadata
+    protected function doLoadMetadata(object $object) : ClassMetadata\Model\Class_
     {
         $config = $this->config->getMappingValue('metadata_location', $object)['inner_php'];
         $method = $config['method'];

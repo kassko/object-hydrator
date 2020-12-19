@@ -23,7 +23,7 @@ class InnerYamlLoader extends AbstractPhpArrayContentLoader
         return isset($metadataLocation['inner_yaml']);
     }
 
-    protected function doLoadMetadata(object $object) : ClassMetadata
+    protected function doLoadMetadata(object $object) : ClassMetadata\Model\Class_
     {
         $config = $this->config->getMappingValue('metadata_location', $object)['inner_yaml'];
         $method = $config['method'];

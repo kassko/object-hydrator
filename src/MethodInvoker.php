@@ -35,7 +35,7 @@ class MethodInvoker
         return $this;
     }
 
-    public function invokeMethod(?ClassMetadata\Method $method, array $args = [])
+    public function invokeMethod(?ClassMetadata\Model\Method $method, array $args = [])
     {
         if (null === $method) {
             return null;
@@ -90,9 +90,9 @@ class MethodInvoker
         return $data;
     }
 
-    public function invokeVisitorsCallbacks(?ClassMetadata\Methods $methods, ?object $event = null) : ?object
+    public function invokeVisitorsCallbacks(array $methods, ?object $event = null) : ?object
     {
-        if (null === $methods) {
+        if (0 === count($methods)) {
             return $event;
         }
 
@@ -103,7 +103,7 @@ class MethodInvoker
         return $event;
     }
 
-    public function invokeVisitorCallback(?ClassMetadata\Method $method, ?object $event = null) : ?object
+    public function invokeVisitorCallback(?ClassMetadata\Model\Method $method, ?object $event = null) : ?object
     {
         if (null === $method) {
             return $event;

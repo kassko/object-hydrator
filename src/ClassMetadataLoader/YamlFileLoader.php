@@ -23,7 +23,7 @@ class YamlFileLoader extends AbstractPhpArrayContentLoader
         return isset($metadataLocation['yaml_file']);
     }
 
-    protected function doLoadMetadata(object $object) : ClassMetadata
+    protected function doLoadMetadata(object $object) : ClassMetadata\Model\Class_
     {
         $filePath = $this->config->getMappingValue('metadata_location', $object)['yaml_file']['path'];
         $yamlContent = file_get_contents($filePath);

@@ -2,17 +2,14 @@
 
 namespace Big\Hydrator\ClassMetadataLoader;
 
-use Big\Hydrator\{ClassMetadata, ClassMetadataLoaderInterface};
+use Big\Hydrator\{ClassMetadata, ClassMetadataLoaderInterface, ModelBuilder};
 
 abstract class AbstractLoader implements ClassMetadataLoaderInterface
 {
-    public function loadMetadata(object $object) : ClassMetadata
+    public function loadMetadata(object $object) : array
     {
-    	$classMetadata = $this->doLoadMetadata($object);
-    	$classMetadata->afterMetadataLoaded();
-
-    	return $classMetadata;
+        return $this->doLoadMetadata($object);
     }
 
-    abstract protected function doLoadMetadata(object $object) : ClassMetadata;
+    abstract protected function doLoadMetadata(object $object) : array;
 }

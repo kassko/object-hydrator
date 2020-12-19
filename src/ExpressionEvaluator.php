@@ -45,7 +45,11 @@ class ExpressionEvaluator
     public function resolveExpressions(array $args) : array
     {
         foreach ($args as &$arg) {
-            $arg = $this->resolveExpression($arg);
+            if ($arg instanceof ClassMetadata\Model\Expression) {
+                $arg = $this->resolveAdvancedExpression($arg);
+            } else {
+                $arg = $this->resolveExpression($arg);
+            }
         }
 
         return $args;
@@ -62,7 +66,7 @@ class ExpressionEvaluator
             );
         }
 
-        if (! is_scalar($arg)) {
+        if (!is_scalar($arg)) {
             throw new \InvalidArgumentException(
                 sprintf(
                     'Cannot resolve an expression in metadata of class "%s". Expected a scalar expression but got one of type "%s".',
@@ -113,30 +117,26 @@ class ExpressionEvaluator
 
     public function resolveAdvancedExpression($arg)
     {
-        /*
-        $expressionDetected = preg_match('/expr\((.+)\)/', $arg, $matches);
-
-        if (1 !== $expressionDetected) {
-            return $arg;
-        }
-
-        //$expression = $matches[1];
-        */
-
-        if (! $arg instanceof ClassMetadata\Expression) {
-            return $arg;
+        if (! $arg instanceof ClassMetadata\Model\Expression) {
+            throw new \Exception(sprintf(
+                'Cannot resolve an expression in metadata of class "%s".'
+                . PHP_EOL . 'An instance of %s was expected but got "%s"',
+                get_class($this->expressionContext['object']),
+                Expression::class,
+                is_scalar($arg) ? $arg : (is_object($arg) ? get_class($arg) : gettype($arg))
+            ));
         }
 
         if (null === $this->expressionLanguage) {
             throw new Exception\NotProvidedExpressionEvaluatorException(
                 sprintf(
                     'Cannot resolve such expression "%s" in metadata of class "%s". You must install the component "symfony/expression-language".',
-                    $expression->getValue(),
+                    $arg->getValue(),
                     get_class($this->expressionContext['object'])
                 )
             );
         }
 
-        return $this->expressionLanguage->evaluate($expression->getValue(), $this->expressionContext->getValues());
+        return $this->expressionLanguage->evaluate($arg->getValue(), $this->expressionContext->getValues());
     }
 }

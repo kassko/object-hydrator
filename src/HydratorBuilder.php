@@ -18,6 +18,8 @@ class HydratorBuilder
         $config = new \Big\Hydrator\Config($this->getValidatedConfig());
         $configValues = $config->getValues();
 
+        $reflectionClassRepository = new \Big\Hydrator\ClassMetadata\Repository\ReflectionClassRepository;
+
         $classMetadataLoader = new \Big\Hydrator\ClassMetadataLoader(
             (new \Big\Hydrator\LoaderResolver)->addLoader(
                 (
@@ -26,8 +28,20 @@ class HydratorBuilder
                     )
                 )->setConfig(
                     new \Big\Hydrator\ClassMetadataConfig($config['class_metadata'])
-                )
+                )->setReflectionClassRepository($reflectionClassRepository)
             )
+        );
+
+        $modelBuilder = new \Big\Hydrator\ModelBuilder(
+            new \Big\Hydrator\ClassMetadata\Repository\DataSource,
+            new \Big\Hydrator\ClassMetadata\Repository\Expression,
+            new \Big\Hydrator\ClassMetadata\Repository\Method,
+            $reflectionClassRepository
+        );
+
+        $modelLoader = new \Big\Hydrator\ModelLoader(
+            $classMetadataLoader,
+            $modelBuilder
         );
 
         $expressionContext = new \Big\Hydrator\ExpressionContext;
@@ -46,12 +60,12 @@ class HydratorBuilder
 
         $propertyCandidatesResolver = new \Big\Hydrator\PropertyCandidatesResolver($expressionEvaluator, $methodInvoker);
 
-        $memberAccessStrategyFactory = (new \Big\Hydrator\MemberAccessStrategyFactory);
+        $memberAccessStrategyFactory = new \Big\Hydrator\MemberAccessStrategyFactory;
 
         $objectLoadabilityChecker = new \Big\Hydrator\ObjectLoadabilityChecker;
 
         $hydrator = (new \Big\Hydrator\Hydrator(
-            $classMetadataLoader,
+            $modelLoader,
             $memberAccessStrategyFactory,
             new \Big\Hydrator\IdentityMap($objectLoadabilityChecker),
             $objectLoadabilityChecker,
@@ -110,16 +124,18 @@ class HydratorBuilder
 
     private function finalizeConfig(array $config) : array
     {
-        $config['data_source_expressions'] = $this->completeExpressionConfig($config['data_source_expressions']);
-        $config = $this->resolveServiceLocatorConfig($config);
+        if (isset($config['data_source_expressions'])) {
+            $config['data_source_expressions'] = $this->completeExpressionConfig($config['data_source_expressions']);
+            $config = $this->resolveServiceLocatorConfig($config);
 
-        if (isset($config['logger_key']) && !isset($config['service_locator'])) {
-            throw new \LogicException(sprintf(
-                'Cannot validate configuration.' .
-                PHP_EOL . 'As you specified a logger key, you must provide a service locator' .
-                PHP_EOL . 'to locate the logger service and resolve it.' .
-                PHP_EOL . 'The key "%s" required "%s".'
-            ));
+            if (isset($config['logger_key']) && !isset($config['service_locator'])) {
+                throw new \LogicException(sprintf(
+                    'Cannot validate configuration.' .
+                    PHP_EOL . 'As you specified a logger key, you must provide a service locator' .
+                    PHP_EOL . 'to locate the logger service and resolve it.' .
+                    PHP_EOL . 'The key "%s" required "%s".'
+                ));
+            }
         }
 
         return $config;

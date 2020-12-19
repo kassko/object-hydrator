@@ -100,9 +100,6 @@ final class Config implements \ArrayAccess, \IteratorAggregate
      */
     public function offsetExists($key) : bool
     {
-        if ('service_locator' === $key) {
-            var_dump(__FUNCTION__, 'ICI', $key, $this->values['service_locator'], isset($this->values[$key]));
-        }
         return isset($this->values[$key]);
     }
 

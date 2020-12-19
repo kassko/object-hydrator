@@ -17,7 +17,7 @@ class NativeAnnotationLoader extends AbstractDelegatedLoader
         && (! method_exists($object, 'preferDoctrineAnnotations') || ! $object->preferDoctrineAnnotations());
     }
 
-    protected function doLoadMetadata(object $object) : ClassMetadata;
+    protected function doLoadMetadata(object $object) : ClassMetadata\Model\Class_;
     {
         return new ClassMetadata;
     }

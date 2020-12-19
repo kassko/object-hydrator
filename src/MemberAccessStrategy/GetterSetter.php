@@ -8,48 +8,44 @@ use function get_class_methods;
 
 
 /**
-* Access logic by getters/issers/setters to object members to hydrate.
+* Access logic by getters/setters to object members to set with hydrated/model value.
 *
 * @author kko
 */
 class GetterSetter implements \Big\Hydrator\MemberAccessStrategyInterface
 {
     private $object;
-    private $classMetadata;
     private $reflectionClass;
-    private $classMethods;
     private $propertyAccessStrategy;
 
-    public function __construct(object $object, ClassMetadata $classMetadata, Property $propertyAccessStrategy)
+    public function __construct(object $object, ClassMetadata\Model\Class_ $classMetadata, Property $propertyAccessStrategy)
     {
         $this->object = $object;
-        $this->classMetadata = $classMetadata;
         $this->reflectionClass = $classMetadata->getReflectionClass();
-        $this->classMethods = array_flip(get_class_methods($object));
         $this->propertyAccessStrategy = $propertyAccessStrategy;
     }
 
-    public function getValue(ClassMetadata\Property $property)
+    public function getValue(ClassMetadata\Model\Property\Leaf $property)
     {
         $getter = $property->getGetter();
-        if (isset($this->classMethods[$getter])) {
+        if (isset($getter) && $this->reflectionClass->hasMethod($getter)) {
             return $this->object->$getter();
-        };
+        }
 
-        return $this->propertyAccessStrategy->getValue($property->getName());
+        return $this->propertyAccessStrategy->getValue($property);
     }
 
-    public function setValue($value, ClassMetadata\Property $property) : void
+    public function setValue($value, ClassMetadata\Model\Property\Leaf $property) : void
     {
         $setter = $property->getSetter();
-        if (isset($this->classMethods[$setter])) {
+        if (isset($setter) && $this->reflectionClass->hasMethod($setter)) {
             $this->object->$setter($value);
         }
 
         $this->propertyAccessStrategy->setValue($value, $property);
     }
 
-    public function setValues(array $collectionValue, ClassMetadata\Property $property) : void
+    public function setValues(array $collectionValue, ClassMetadata\Model\Property\Leaf $property) : void
     {
         $adder = $property->getAdder();
         if (isset($adder)) {

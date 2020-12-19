@@ -22,7 +22,7 @@ class PhpFileLoader extends AbstractPhpArrayContentLoader
         return isset($metadataLocation['php_file']);
     }
 
-    protected function doLoadMetadata(object $object) : ClassMetadata
+    protected function doLoadMetadata(object $object) : ClassMetadata\Model\Class_
     {
         $filePath = $this->config->getMappingValue('metadata_location', $object)['php_file']['path'];
         $content = require $filePath;

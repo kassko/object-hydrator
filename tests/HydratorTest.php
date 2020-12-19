@@ -37,12 +37,12 @@ class HydratorTest extends TestCase
              * })
              *
              *
-             * @BHY\Conditionals({
-             *      @BHY\Conditional(
+             * @BHY\Discriminators({
+             *      @BHY\Discriminator(
              *          id="lazyLoadableCond",
              *          value=@BHY\Expression(value="object.getId() == 1")
              *      ),
-             *      @BHY\Conditional(
+             *      @BHY\Discriminator(
              *          id="privateEmailCond",
              *          value=@BHY\Method(
              *              class="Big\HydratorTest\Fixture\MailConditionnalService",
@@ -56,15 +56,15 @@ class HydratorTest extends TestCase
 
                 private $id;
                 /**
-                 * @BHY\PropertyCandidates(enabled=false, items={
-                 *      @BHY\Property(enabled=false, conditionalRef="lazyLoadableCond", keyInRawData="first_name", dataSourceRef="nameSource", loading="EAGER", _keyInRawData=@BHY\Expression("second_name")),
-                 *      @BHY\Property(_keyInRawData=@BHY\Expression(value="8"), dataSourceRef="nameSource", loading="EAGER")
+                 * @BHY\PropertyConfig\Candidates(enabled=false, items={
+                 *      @BHY\PropertyConfig\SingleType(enabled=false, discriminatorRef="lazyLoadableCond", keyInRawData="first_name", dataSourceRef="nameSource", loading="EAGER", _keyInRawData=@BHY\Expression("second_name")),
+                 *      @BHY\PropertyConfig\SingleType(_keyInRawData=@BHY\Expression(value="8"), dataSourceRef="nameSource", loading="EAGER")
                  * })
-                 * @BHY\Property(_keyInRawData=@BHY\Expression(value="first_name"), dataSourceRef="nameSource", loading="EAGER")
+                 * @BHY\PropertyConfig\SingleType(_keyInRawData=@BHY\Expression(value="first_name"), dataSourceRef="nameSource", loading="EAGER")
                  */
                 private $name;
                 /**
-                 * @BHY\Property(dataSourceRef="emailSource", loading="EAGER")
+                 * @BHY\PropertyConfig\SingleType(dataSourceRef="emailSource", loading="EAGER")
                  */
                 private $email;
 

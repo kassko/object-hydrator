@@ -6,5 +6,5 @@ use Big\Hydrator\ClassMetadata;
 
 interface ClassMetadataLoaderInterface
 {
-    public function loadMetadata(object $object) : ClassMetadata;
+    public function loadMetadata(object $object) : array;
 }

@@ -6,7 +6,7 @@ use Big\Hydrator\ClassMetadata;
 use Big\Hydrator\MemberAccessStrategy\Exception\NotFoundMemberException;
 
 /**
-* Access logic by property to object members to hydrate.
+* Access logic by property to object members to set with hydrated/model value.
 *
 * @author kko
 */
@@ -15,18 +15,18 @@ class Property implements \Big\Hydrator\MemberAccessStrategyInterface
     private $object;
     private $reflectionClass;
 
-    public function __construct(object $object, ClassMetadata $classMetadata)
+    public function __construct(object $object, ClassMetadata\Model\Class_ $classMetadata)
     {
         $this->object = $object;
         $this->reflectionClass = $classMetadata->getReflectionClass();
     }
 
-    public function getValue(ClassMetadata\Property $property)
+    public function getValue(ClassMetadata\Model\Property\Leaf $property)
     {
-        return $this->doGetValue($property);
+        return $this->doGetValue($property->getName());
     }
 
-    public function setValue($value, ClassMetadata\Property $property) : void
+    public function setValue($value, ClassMetadata\Model\Property\Leaf $property) : void
     {
         $propertyName = $property->getName();
         if (! isset($propertyName)) {

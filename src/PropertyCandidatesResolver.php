@@ -3,14 +3,15 @@
 namespace Big\Hydrator;
 
 use Big\Hydrator\ClassMetadata;
-use Big\Hydrator\ClassMetadata\PropertyCandidates;
+use Big\Hydrator\ClassMetadata\Model\Property\{Candidates, Leaf};
 
 use function sprintf;
 
 class PropertyCandidatesResolver
 {
     private ExpressionEvaluator $expressionEvaluator;
-    private MethodInvoker $invoker;
+    private MethodInvoker $methodInvoker;
+
 
     public function __construct(ExpressionEvaluator $expressionEvaluator, MethodInvoker $methodInvoker)
     {
@@ -18,20 +19,21 @@ class PropertyCandidatesResolver
         $this->methodInvoker = $methodInvoker;
     }
 
-    public function resolveGoodCandidate(PropertyCandidates $propertyCandidates)
+    public function resolveGoodCandidate(Candidates $propertyCandidates) : Leaf
     {
-        foreach ($propertyCandidates->items as $candidateProperty) {
-            if (! $candidateProperty->hasConditional()) {
+        foreach ($propertyCandidates->getCandidates() as $candidateProperty) {
+            if (! $candidateProperty->hasDiscriminator()) {
                 return $candidateProperty;
             }
 
-            $conditionalValue = $candidateProperty->getConditional()->getValue();
-            if ($conditionalValue->getValue() instanceof ClassMetadata\Expression) {
-                if ($this->expressionEvaluator->resolveAdvancedExpression($conditionalValue)) {
+            $discriminator = $candidateProperty->getDiscriminator();
+
+            if ($discriminator->isExpression()) {
+                if ($this->expressionEvaluator->resolveAdvancedExpression($discriminator)) {
                     return $candidateProperty;
                 }
-            } elseif ($conditionalValue instanceof ClassMetadata\Method) {
-                if ($this->methodInvoker->invokeMethod($conditionalValue)) {
+            } elseif ($discriminator->isMethod()) {
+                if ($this->methodInvoker->invokeMethod($discriminator)) {
                     return $candidateProperty;
                 }
             }
@@ -39,7 +41,7 @@ class PropertyCandidatesResolver
 
         throw new \LogicException(sprintf(
             'Cannot resolve version of property metadata to use for property "%s".',
-            $candidatePropertys->getName()
+            $candidateProperty->getName()
         ));
     }
 }

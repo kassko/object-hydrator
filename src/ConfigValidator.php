@@ -61,19 +61,12 @@ class ConfigValidator implements ConfigurationInterface
                         ->end()
                     ->end()
                 ->end()
-                ->arrayNode('data_source_expressions')
-                    /*->addDefaultsIfNotSet()
-                    ->children()
-                    ->end()
-                    ->append($this->getExpressionSection())*/
-                ->end()
+                ->append($this->getExpressionSection())
                 ->variableNode('psr_container')->cannotBeEmpty()->defaultNull()->end()
                 ->variableNode('service_provider')->cannotBeEmpty()->defaultNull()->end()
                 ->scalarNode('logger_key')->cannotBeEmpty()->defaultNull()->end()
             ->end()
         ;
-
-        $this->addDataSourceExpressionsSection($rootNode->find('data_source_expressions'));
 
         return $builder;
     }
@@ -88,8 +81,21 @@ class ConfigValidator implements ConfigurationInterface
         return version_compare(PHP_VERSION, '8.0.0') < 0;
     }
 
-    private function addDataSourceExpressionsSection(ArrayNodeDefinition $node) : void
+    private function getExpressionSection() : ArrayNodeDefinition
     {
+        $nodeName = 'data_source_expressions';
+
+        if (method_exists(TreeBuilder::class, 'getRootNode')) {
+            $builder = new TreeBuilder($nodeName);
+            $node = $builder->getRootNode();
+        } else {//Keep compatibility with Symfony <= 4.3
+            /**
+             * @see https://github.com/symfony/symfony/blob/4.3/src/Symfony/Component/Config/Definition/Builder/TreeBuilder.php#L48
+             */
+            $builder = new TreeBuilder;
+            $node = $builder->root($nodeName);
+        }
+
         $node
             ->addDefaultsIfNotSet()
             ->children()
@@ -126,7 +132,7 @@ class ConfigValidator implements ConfigurationInterface
             ->end()
         ;
 
-        //return $node;
+        return $node;
     }
 
     private function validateMappingExpressionTokens(array $config, string $expressionTokenKind) : array

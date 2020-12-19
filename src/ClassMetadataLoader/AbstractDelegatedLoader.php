@@ -2,15 +2,24 @@
 
 namespace Big\Hydrator\ClassMetadataLoader;
 
+use Big\Hydrator\ClassMetadata\Repository\ReflectionClassRepository;
 use Big\Hydrator\{ClassMetadataConfig, ClassMetadataDelegatedLoaderInterface};
 
 abstract class AbstractDelegatedLoader extends AbstractLoader implements ClassMetadataDelegatedLoaderInterface
 {
 	protected ClassMetadataConfig $config;
+    protected ReflectionClassRepository $reflectionClassRepository;
 
     public function setConfig(ClassMetadataConfig $config) : self
     {
         $this->config = $config;
+
+        return $this;
+    }
+
+    public function setReflectionClassRepository(ReflectionClassRepository $reflectionClassRepository) : self
+    {
+        $this->reflectionClassRepository = $reflectionClassRepository;
 
         return $this;
     }

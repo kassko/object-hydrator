@@ -11,6 +11,6 @@ use Big\Hydrator\ClassMetadata;
 */
 interface MemberAccessStrategyInterface
 {
-    public function getValue(ClassMetadata\Property $property);
-    public function setValue($value, ClassMetadata\Property $property) : void;
+    public function getValue(ClassMetadata\Model\Property\Leaf $property);
+    public function setValue($value, ClassMetadata\Model\Property\Leaf $property) : void;
 }

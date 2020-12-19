@@ -3,6 +3,7 @@
 namespace Big\Hydrator\ClassMetadataLoader;
 
 use Big\Hydrator\ClassMetadata;
+use Big\Hydrator\Annotation\Doctrine as Annotation;
 use Doctrine\Common\Annotations\AnnotationReader;
 
 use function get_class;
@@ -27,40 +28,43 @@ class DoctrineAnnotationLoader extends AbstractDelegatedLoader
         || (method_exists($object, 'preferDoctrineAnnotations') && $object->preferDoctrineAnnotations()));
     }
 
-    protected function doLoadMetadata(object $object) : ClassMetadata
+    protected function doLoadMetadata(object $object) : array
     {
-        $classMetadata = new ClassMetadata($object);
-        $reflectionClass = $classMetadata->getReflectionClass($object);
+        $classMetadata = [];
 
-        //Class level
-        $classLevelAnnotations = $this->getClassLevelAnnotationsByClass($reflectionClass);
-        $classOptions = $classLevelAnnotations[ClassMetadata\ClassOptions::class] ?? new ClassMetadata\ClassOptions;
+        $reflectionClass = $this->reflectionClassRepository->addReflectionClassByObject($object);
 
-        $classMetadata->setDefaultHydrateAllProperties($classOptions->defaultHydrateAllProperties);
+        $classLevelAnnotations = $this->getClassLevelAnnotationsByClass($reflectionClass->getReflectionClassesHierarchy());
 
-        if (isset($classLevelAnnotations[ClassMetadata\DataSources::class])) {
-            $dataSources = new ClassMetadata\DataSources;
-            foreach ($classLevelAnnotations[ClassMetadata\DataSources::class]->items as $dataSource) {
-                if ($dataSource->enabled) {
-                    $dataSources->items[] = $dataSource;
-                }
-            }
-
-            $classMetadata->setDataSources($dataSources);
+        if (isset($classLevelAnnotations[Annotation\ClassConfig::class])) {
+            $classMetadata['class'] = $classLevelAnnotations[Annotation\ClassConfig::class]->toArray();
         }
 
-        if (isset($classLevelAnnotations[ClassMetadata\Conditionals::class])) {
-            $conditionals = new ClassMetadata\Conditionals;
-            foreach ($classLevelAnnotations[ClassMetadata\Conditionals::class]->items as $conditional) {
-                if ($conditional->enabled) {
-                    $conditionals->items[] = $conditional;
-                }
-            }
-
-            $classMetadata->setConditionals($conditionals);
+        if (isset($classLevelAnnotations[Annotation\Method::class])) {
+            $classMetadata['method'] = $classLevelAnnotations[Annotation\Method::class]->toArray();
         }
 
-        //Property level
+        if (isset($classLevelAnnotations[Annotation\Methods::class])) {
+            $classMetadata['methods'] = $classLevelAnnotations[Annotation\Methods::class]->toArray()['items'];
+        }
+
+        if (isset($classLevelAnnotations[Annotation\Expression::class])) {
+            $classMetadata['expression'] = $classLevelAnnotations[Annotation\Expression::class]->toArray();
+        }
+
+        if (isset($classLevelAnnotations[Annotation\Expressions::class])) {
+            $classMetadata['expressions'] = $classLevelAnnotations[Annotation\Expressions::class]->toArray()['items'];
+        }
+
+        if (isset($classLevelAnnotations[Annotation\DataSource::class])) {
+            $classMetadata['data_source'] = $classLevelAnnotations[Annotation\DataSource::class]->toArray();
+        }
+
+        if (isset($classLevelAnnotations[Annotation\DataSources::class])) {
+            $classMetadata['data_sources'] = $classLevelAnnotations[Annotation\DataSources::class]->toArray()['items'];
+        }
+
+
         foreach ($reflectionClass->getProperties() as $reflectionProperty) {
             $propertyName = $reflectionProperty->getName();
             if ('__registered' === $propertyName) {
@@ -69,56 +73,71 @@ class DoctrineAnnotationLoader extends AbstractDelegatedLoader
 
             $propertyLevelAnnotationsByClass = $this->getPropertyLevelAnnotationsByClass($reflectionProperty);
 
-            $propertyCandidates = new ClassMetadata\PropertyCandidates;
-            $propertyCandidates->name = $propertyName;
-
-            if (isset($propertyLevelAnnotationsByClass[ClassMetadata\Property::class])) {
-                $propertyCandidates->items[] = $propertyLevelAnnotationsByClass[ClassMetadata\Property::class];
+            if (isset($propertyLevelAnnotationsByClass[Annotation\PropertyConfig\SingleType::class])) {
+                $classMetadata['properties'][$propertyName]['single_type'] = $propertyLevelAnnotationsByClass[Annotation\PropertyConfig\SingleType::class]->toArray();
             }
 
-            if (isset($propertyLevelAnnotationsByClass[ClassMetadata\PropertyCandidates::class])) {
-                if (count($propertyCandidates->items) > 0) {
-                    throw new \LogicException(sprintf(
-                        'Cannot load doctrine annotations.' .
-                        'You must annotate property "%s" with either annotation "%s" or "%s" but not both.' .
-                        'Please fix this by removing or disabling (attribute "enabled" to false) one of these annotations.',
-                        $propertyName,
-                        ClassMetadata\Property::class,
-                        ClassMetadata\PropertyCandidates::class
-                    ));
+            if (isset($propertyLevelAnnotationsByClass[Annotation\PropertyConfig\CollectionType::class])) {
+                $propertyData = $propertyLevelAnnotationsByClass[Annotation\PropertyConfig\CollectionType::class]->toArray();
+
+                if (isset($propertyData['item_class_candidates'])) {
+                    $propertyData['item_class_candidates'] = $propertyData['item_class_candidates']['items'];
                 }
 
+                $classMetadata['properties'][$propertyName]['collection_type'] = $propertyData;
+            }
 
-                foreach ($propertyLevelAnnotationsByClass[ClassMetadata\PropertyCandidates::class] as $candidateProperty) {
-                    if ($candidateProperty->enabled) {
-                        $propertyCandidates->name = $propertyName;
-                        $propertyCandidates->items[] = $candidateProperty;
-                        $propertyCandidates->variables = $propertyLevelAnnotationsByClass[ClassMetadata\PropertyCandidates::class]->variables;
+            if (isset($propertyLevelAnnotationsByClass[Annotation\PropertyConfig\Candidates::class])) {
+                $propertyCandidatesData = $propertyLevelAnnotationsByClass[Annotation\PropertyConfig\Candidates::class]->toArray();
+                foreach ($propertyCandidatesData['candidates'] as $key => &$propertyCandidateData) {
+                    if (!isset($propertyCandidateData['items_class'])) {
+                        $propertyCandidateData = ['single_type' => $propertyCandidateData];
+                    } else {
+                        if (isset($propertyCandidateData['item_class_candidates'])) {
+                            $propertyCandidateData['item_class_candidates'] = $propertyCandidateData['item_class_candidates']['items'];
+
+                        }
+                        $propertyCandidateData = ['collection_type' => $propertyCandidateData];
                     }
                 }
+
+                $classMetadata['properties'][$propertyName]['candidates'] = $propertyCandidatesData;
             }
 
-            if (count($propertyCandidates->items) > 0) {
-                $classMetadata->addExplicitlyIncludedProperty($propertyName, $propertyCandidates);
-            } elseif (isset($propertyLevelAnnotationsByClass[ClassMetadata\ExcludedProperty::class])) {
-                $property = $propertyLevelAnnotationsByClass[ClassMetadata\ExcludedProperty::class];
-                $classMetadata->addExplicitlyExcludedProperty($propertyName, $property);
+            if (isset($propertyLevelAnnotationsByClass[Annotation\NotToAutoconfigure::class])) {
+                $classMetadata['not_to_autoconfigure_properties'][] = $propertyName;
             }
         }
 
         return $classMetadata;
     }
 
-    private function getClassLevelAnnotationsByClass(\ReflectionClass $reflectionClass) : array
+    private function getClassLevelAnnotationsByClass(array $reflectionClassesHierarchy) : array
     {
         $classLevelAnnotationsByClass = [];
+        $previousReflectionClass = null;
 
-        $classLevelAnnotations = $this->reader->getClassAnnotations($reflectionClass);
-        foreach ($classLevelAnnotations as $classLevelAnnotation) {
-            if (! $classLevelAnnotation->enabled) {
-                continue;
+        foreach ($reflectionClassesHierarchy as $reflectionClass) {
+            $classLevelAnnotations = $this->reader->getClassAnnotations($reflectionClass);
+            foreach ($classLevelAnnotations as $classLevelAnnotation) {
+                if ($classLevelAnnotation->ignore) {
+                    continue;
+                }
+
+                $classLevelAnnotationClass = get_class($classLevelAnnotation);
+
+                if (isset($classLevelAnnotationsByClass[$classLevelAnnotationClass])) {
+                    throw new \Exception(sprintf(
+                        'Cannot define class annotation "%s" on both class "%s" and its parent class "%s".',
+                        $classLevelAnnotationClass,
+                        $previousReflectionClass,
+                        $reflectionClass->getName()
+                    ));
+                }
+                $classLevelAnnotationsByClass[$classLevelAnnotationClass] = $classLevelAnnotation;
             }
-            $classLevelAnnotationsByClass[get_class($classLevelAnnotation)] = $classLevelAnnotation;
+
+            $previousReflectionClass = $reflectionClass;
         }
 
         return $classLevelAnnotationsByClass;
@@ -130,7 +149,7 @@ class DoctrineAnnotationLoader extends AbstractDelegatedLoader
 
         $propertyLevelAnnotations = $this->reader->getPropertyAnnotations($reflectionProperty);
         foreach ($propertyLevelAnnotations as $propertyLevelAnnotation) {
-            if (! $propertyLevelAnnotation->enabled) {
+            if ($propertyLevelAnnotation->ignore) {
                 continue;
             }
             $propertyLevelAnnotationsByClass[get_class($propertyLevelAnnotation)] = $propertyLevelAnnotation;

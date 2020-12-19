@@ -14,9 +14,9 @@ class ClassMetadataLoader implements ClassMetadataLoaderInterface
         $this->loaderResolver = $loaderResolver;
     }
 
-    public function loadMetadata(object $object) : ClassMetadata
+    public function loadMetadata(object $object) : array
     {
         return ($loader = $this->loaderResolver->resolve($object))
-        && ($classMetadata = $loader->loadMetadata($object)) ? $classMetadata : new ClassMetadata($object);
+        && ($classMetadata = $loader->loadMetadata($object)) ? $classMetadata : [];
     }
 }

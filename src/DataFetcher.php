@@ -13,7 +13,7 @@ class DataFetcher
         $this->methodInvoker = $methodInvoker;
     }
 
-    public function fetchDataSetByProperty(ClassMetadata\Property $propertyOptionsMetadata, object $object, ClassMetadata $classMetadata)
+    public function fetchDataSetByProperty(ClassMetadata\Model\Property\Leaf $propertyOptionsMetadata, object $object, ClassMetadata\Model\Class_ $classMetadata)
     {
         $data = [];
         $indexedByPropertiesKeys = true;
@@ -27,7 +27,7 @@ class DataFetcher
         return $indexedByPropertiesKeys ? $data : [$propertyOptionsMetadata->getKeyInRawData() => $data];
     }
 
-    private function fetchDataFromDataSources(array $dataSourcesMetadata, object $object, ClassMetadata $classMetadata)
+    private function fetchDataFromDataSources(array $dataSourcesMetadata, object $object, ClassMetadata\Model\Class_ $classMetadata)
     {
         $dataByDataSources = [];
 
@@ -38,16 +38,16 @@ class DataFetcher
         return $dataByDataSources;
     }
 
-    private function fetchDataFromDataSource(ClassMetadata\DataSource $dataSourceMetadata, object $object, ClassMetadata $classMetadata)
+    private function fetchDataFromDataSource(ClassMetadata\Model\DataSource $dataSourceMetadata, object $object, ClassMetadata\Model\Class_ $classMetadata)
     {
-        $this->methodInvoker->invokeVisitorsCallbacks($dataSourceMetadata->getAfterMetadataLoading(), $dataSourceMetadata);
-        $this->methodInvoker->invokeVisitorsCallbacks($dataSourceMetadata->getBeforeDataFetching());
+        $this->methodInvoker->invokeVisitorsCallbacks($dataSourceMetadata->getCallbacksUsingMetadata()->getBeforeCollection(), $dataSourceMetadata);
+        $this->methodInvoker->invokeVisitorsCallbacks($dataSourceMetadata->getCallbacksFetchingData()->getBeforeCollection());
 
         if (! $dataSourceMetadata->hasFallBackDataSource()) {
             return $this->invokeDataSource($dataSourceMetadata, $classMetadata);
         }
 
-        if (ClassMetadata\DataSource::ON_FAIL_CHECK_RETURN_VALUE === $dataSourceMetadata->getOnFail()) {
+        if (ClassMetadata\Model\DataSource::ON_FAIL_CHECK_RETURN_VALUE === $dataSourceMetadata->getOnFail()) {
 
             $data = $this->invokeDataSource($dataSourceMetadata, $classMetadata);
 
@@ -72,12 +72,12 @@ class DataFetcher
             return $this->fetchDataFromDataSource($fallBackDataSourceMetadata, $object, $classMetadata);
         }
 
-        $event = $this->methodInvoker->invokeVisitorsCallbacks($dataSourceMetadata->getAfterDataFetching(), new Event\AfterDataFetching($data));
+        $event = $this->methodInvoker->invokeVisitorsCallbacks($dataSourceMetadata->getCallbacksFetchingData()->getAfterCollection(), new Event\AfterDataFetching($data));
 
         return $event->getNormalizedValue();
     }
 
-    private function invokeDataSource(ClassMetadata\DataSource $dataSourceMetadata)
+    private function invokeDataSource(ClassMetadata\Model\DataSource $dataSourceMetadata)
     {
         return $this->methodInvoker->invokeMethod($dataSourceMetadata->getMethod());
     }

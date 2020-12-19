@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- http://www.phpunit.de/manual/current/en/appendixes.configuration.html -->
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<phpunit
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd"
   backupGlobals="false"
   colors="true"
-  bootstrap="tests/bootstrap.php"
-  xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd">
+  stopOnError="true"
+  stopOnFailure="true"
+  bootstrap="tests/bootstrap.php">
 
     <testsuites>
         <testsuite name="Test Suite">
@@ -17,4 +20,11 @@
             <directory>./src</directory>
         </include>
     </coverage>
+
+    <listeners>
+        <listener
+            class="\Big\HydratorTest\Phpunit\TestListener"
+            file="tests/Phpunit/TestListener.php"
+        />
+    </listeners>
 </phpunit>
