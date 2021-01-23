@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\Hydrator\Annotation\Doctrine\Capability;
+namespace Kassko\ObjectHydrator\Annotation\Doctrine\Capability;
 
 use function get_object_vars;
 

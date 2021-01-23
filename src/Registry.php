@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
 /**
  * Registry
@@ -82,7 +82,7 @@ final class Registry implements \ArrayAccess, \IteratorAggregate
         return new \ArrayIterator($this->registry);
     }
 
-    public function flush()
+    public function clear()
     {
         $this->registry = [];
     }

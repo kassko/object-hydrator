@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadata\Model;
+namespace Kassko\ObjectHydrator\ClassMetadata\Model;
 
 use Doctrine\Common\Collections\ArrayCollection;
 

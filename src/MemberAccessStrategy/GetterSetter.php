@@ -1,8 +1,8 @@
 <?php
 
-namespace Big\Hydrator\MemberAccessStrategy;
+namespace Kassko\ObjectHydrator\MemberAccessStrategy;
 
-use Big\Hydrator\ClassMetadata;
+use Kassko\ObjectHydrator\ClassMetadata;
 
 use function get_class_methods;
 
@@ -12,7 +12,7 @@ use function get_class_methods;
 *
 * @author kko
 */
-class GetterSetter implements \Big\Hydrator\MemberAccessStrategyInterface
+class GetterSetter implements \Kassko\ObjectHydrator\MemberAccessStrategyInterface
 {
     private $object;
     private $reflectionClass;
@@ -38,8 +38,10 @@ class GetterSetter implements \Big\Hydrator\MemberAccessStrategyInterface
     public function setValue($value, ClassMetadata\Model\Property\Leaf $property) : void
     {
         $setter = $property->getSetter();
+        //var_dump(__METHOD__, 'ICI1', $value, $setter);
         if (isset($setter) && $this->reflectionClass->hasMethod($setter)) {
             $this->object->$setter($value);
+            return;
         }
 
         $this->propertyAccessStrategy->setValue($value, $property);

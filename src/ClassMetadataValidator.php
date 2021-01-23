@@ -1,9 +1,10 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
-use Big\Hydrator\Bridge\Symfony\NodeBuilder;
-use Big\Hydrator\ClassMetadata\Model;
+use Kassko\ObjectHydrator\Bridge\Symfony\NodeBuilder;
+use Kassko\ObjectHydrator\ClassMetadata\Model;
+use Kassko\ObjectHydrator\ClassMetadata\Model\Enum;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
@@ -20,10 +21,11 @@ use function version_compare;
     class:
         default_autoconfigure_properties: true
         raw_data_key_style: 'underscore'
-        to_raw_data_key_style_converter:
+        raw_data_key_style_converter:
             class: 'this'
             method: 'meth'
         dynamic_attribute_marker:
+        accessors_to_bypass: false
     data_sources: ~
     expressions: ~
     methods: ~
@@ -38,7 +40,8 @@ use function version_compare;
                 discriminator: ~
                 discriminator_method_ref: ~
                 discriminator_expression_ref: ~
-                loading: ~
+                factory_method_name: ~
+                constructor_method_args_to_hydrate: false
                 default_value: ~
                 getter: ~
                 setter: ~
@@ -56,7 +59,8 @@ use function version_compare;
                 data_source_ref: ~
                 discriminator_expression_ref: ~
                 discriminator_method_ref: ~
-                loading: ~
+                factory_method_name
+                constructor_method_args_to_hydrate: false
                 default_value: ~
                 getter: ~
                 setter: ~
@@ -65,7 +69,13 @@ use function version_compare;
                 adder: ~
                 items_class: ~
                 items_class_candidates:
-                    - { class: ~, discriminator: ~, discriminator_expression_ref: ~, discriminator_method_ref: ~ }
+                    -
+                      class: ~
+                      factory_method_name: ~
+                      constructor_method_args_to_hydrate: false
+                      discriminator: ~
+                      discriminator_expression_ref: ~
+                      discriminator_method_ref: ~
  */
 class ClassMetadataValidator implements ConfigurationInterface
 {
@@ -84,9 +94,18 @@ class ClassMetadataValidator implements ConfigurationInterface
                     ->children()
                         ->booleanNode('enabled')->defaultTrue()->end()
                         ->booleanNode('default_autoconfigure_properties')->defaultTrue()->end()
-                        ->enumNode('raw_data_key_style')->values(['underscore', 'dash', 'camel_case', 'custom'])->defaultValue('underscore')->end()
-                        ->append($this->methodNode('to_raw_data_key_style_converter', false))
-                        ->scalarNode('default_adder_name_format')->end()
+                        ->enumNode('raw_data_key_style')
+                            ->values([
+                                Enum\RawDataKeyStyle::UNDERSCORE,
+                                Enum\RawDataKeyStyle::DASH,
+                                Enum\RawDataKeyStyle::CAMEL_CASE,
+                                Enum\RawDataKeyStyle::CUSTOM
+                            ])
+                            ->defaultValue(Enum\RawDataKeyStyle::UNDERSCORE)
+                        ->end()
+                        ->append($this->methodNode('raw_data_key_style_converter', false))
+                        ->scalarNode('default_adder_name_format')->defaultValue('add%sItem')->end()
+                        ->booleanNode('accessors_to_bypass')->defaultFalse()->end()
                         ->scalarNode('dynamic_attribute_marker')->defaultValue('_')->end()
                     ->end()
                 ->end()
@@ -143,20 +162,20 @@ class ClassMetadataValidator implements ConfigurationInterface
                             ->append($this->methodNode())
                             ->enumNode('loading_mode')
                                 ->values([
-                                    Model\DataSource::LOADING_MODE_LAZY,
-                                    Model\DataSource::LOADING_MODE_EAGER,
+                                    Enum\DataSourceLoadingMode::LAZY,
+                                    Enum\DataSourceLoadingMode::EAGER,
                                 ])
-                                ->defaultValue(Model\DataSource::LOADING_MODE_LAZY)
+                                ->defaultValue(Enum\DataSourceLoadingMode::LAZY)
                             ->end()
-                            ->scalarNode('indexed_by_properties_keys')->defaultNull()->end()
+                            ->booleanNode('indexed_by_properties_keys')->defaultTrue()->end()
                             ->enumNode('loading_scope')
                                 ->values([
-                                    Model\DataSource::LOADING_SCOPE_DATA_SOURCE,
-                                    Model\DataSource::LOADING_SCOPE_PROPERTY,
-                                    Model\DataSource::LOADING_SCOPE_DATA_SOURCE_ONLY_KEYS,
-                                    Model\DataSource::LOADING_SCOPE_DATA_SOURCE_EXCEPT_KEYS
+                                    Enum\DataSourceLoadingScope::DATA_SOURCE,
+                                    Enum\DataSourceLoadingScope::PROPERTY,
+                                    Enum\DataSourceLoadingScope::DATA_SOURCE_ONLY_KEYS,
+                                    Enum\DataSourceLoadingScope::DATA_SOURCE_EXCEPT_KEYS
                                 ])
-                                ->defaultValue(Model\DataSource::LOADING_SCOPE_DATA_SOURCE)
+                                ->defaultValue(Enum\DataSourceLoadingScope::DATA_SOURCE)
                             ->end()
                             ->arrayNode('loading_scope_keys')
                                 ->scalarPrototype()->end()
@@ -242,12 +261,14 @@ class ClassMetadataValidator implements ConfigurationInterface
                 ->append($this->expressionNode('discriminator_expression'))
                 ->scalarNode('discriminator_method_ref')->defaultNull()->end()
                 ->scalarNode('discriminator_expression_ref')->defaultNull()->end()
-                //->enumNode('loading')->values(['lazy', 'eager'])->defaultValue('lazy')->end()
+                ->append($this->rawDataLocationNode())
+                ->append($this->instanceCreationNode())
                 ->scalarNode('default_value')->defaultNull()->end()
                 ->scalarNode('getter')->defaultNull()->end()
                 ->scalarNode('setter')->defaultNull()->end()
                 ->scalarNode('dynamic_attribute_marker')->defaultNull()->end()
-                ->arrayNode('variables')->scalarPrototype()->end()
+                ->arrayNode('variables')->scalarPrototype()->end()->end()
+                ->arrayNode('dynamic_attributes')->scalarPrototype()->end()->end()
             /*    ->append($this->callbackNode('callbacks_using_metadata'))
                 ->append($this->callbackNode('callbacks_hydration'))
                 ->append($this->callbackNode('callbacks_assigning_hydrated_value'))*/
@@ -273,6 +294,8 @@ class ClassMetadataValidator implements ConfigurationInterface
                 ->arrayNode('item_class_candidate')
                     ->children()
                         ->scalarNode('class')->defaultNull()->end()
+                        ->append($this->rawDataLocationNode())
+                        ->append($this->instanceCreationNode())
                         ->append($this->methodNode('discriminator_method'))
                         ->append($this->expressionNode('discriminator_expression'))
                     ->end()
@@ -297,12 +320,14 @@ class ClassMetadataValidator implements ConfigurationInterface
                 ->append($this->expressionNode('discriminator_expression'))
                 ->scalarNode('discriminator_method_ref')->defaultNull()->end()
                 ->scalarNode('discriminator_expression_ref')->defaultNull()->end()
-                //->enumNode('loading')->values(['lazy', 'eager'])->defaultValue('lazy')->end()
+                ->append($this->rawDataLocationNode())
+                ->append($this->instanceCreationNode())
                 ->scalarNode('default_value')->defaultNull()->end()
                 ->scalarNode('getter')->defaultNull()->end()
                 ->scalarNode('setter')->defaultNull()->end()
+                ->arrayNode('variables')->scalarPrototype()->end()->end()
                 ->scalarNode('dynamic_attribute_marker')->defaultNull()->end()
-                ->arrayNode('variables')->scalarPrototype()->end()
+                ->arrayNode('dynamic_attributes')->scalarPrototype()->end()->end()
             /*    ->append($this->callbackNode('callbacks_using_metadata'))
                 ->append($this->callbackNode('callbacks_hydration'))
                 ->append($this->callbackNode('callbacks_assigning_hydrated_value'))*/
@@ -354,20 +379,20 @@ class ClassMetadataValidator implements ConfigurationInterface
                 ->append($this->methodNode())
                 ->enumNode('loading_mode')
                     ->values([
-                        Model\DataSource::LOADING_MODE_LAZY,
-                        Model\DataSource::LOADING_MODE_EAGER,
+                        Enum\DataSourceLoadingMode::LAZY,
+                        Enum\DataSourceLoadingMode::EAGER,
                     ])
-                    ->defaultValue(Model\DataSource::LOADING_MODE_LAZY)
+                    ->defaultValue(Enum\DataSourceLoadingMode::LAZY)
                 ->end()
-                ->scalarNode('indexed_by_properties_keys')->defaultNull()->end()
+                ->booleanNode('indexed_by_properties_keys')->defaultTrue()->end()
                 ->enumNode('loading_scope')
                     ->values([
-                        Model\DataSource::LOADING_SCOPE_DATA_SOURCE,
-                        Model\DataSource::LOADING_SCOPE_PROPERTY,
-                        Model\DataSource::LOADING_SCOPE_DATA_SOURCE_ONLY_KEYS,
-                        Model\DataSource::LOADING_SCOPE_DATA_SOURCE_EXCEPT_KEYS
+                        Enum\DataSourceLoadingScope::DATA_SOURCE,
+                        Enum\DataSourceLoadingScope::PROPERTY,
+                        Enum\DataSourceLoadingScope::DATA_SOURCE_ONLY_KEYS,
+                        Enum\DataSourceLoadingScope::DATA_SOURCE_EXCEPT_KEYS
                     ])
-                    ->defaultValue(Model\DataSource::LOADING_SCOPE_DATA_SOURCE)
+                    ->defaultValue(Enum\DataSourceLoadingScope::DATA_SOURCE)
                 ->end()
                 ->arrayNode('loading_scope_keys')
                     ->scalarPrototype()->end()
@@ -394,7 +419,7 @@ class ClassMetadataValidator implements ConfigurationInterface
         return $node;
     }
 
-    private function methodNode(string $nodeName = 'method', bool $addDefaultsIfNotSet = true) : ArrayNodeDefinition
+    private function methodNode(string $nodeName = 'method') : ArrayNodeDefinition
     {
         $node = $this->getRootNode($nodeName);
 
@@ -442,6 +467,53 @@ class ClassMetadataValidator implements ConfigurationInterface
                 ->booleanNode('enabled')->defaultTrue()->end()
                 ->scalarNode('id')->defaultNull()->end()
                 ->scalarNode('value')->defaultNull()->end()
+            ->end();
+
+        return $node;
+    }
+
+    private function rawDataLocationNode() : ArrayNodeDefinition
+    {
+        $node = $this->getRootNode('raw_data_location');
+
+        $node
+            ->treatTrueLike(['enabled' => true])
+            ->treatFalseLike(['enabled' => false])
+            ->treatNullLike(['enabled' => true])
+            //->addDefaultsIfNotSet()
+            ->children()
+                ->booleanNode('enabled')->defaultTrue()->end()
+                ->enumNode('location_name')
+                    ->values([Enum\RawDataLocation::PARENT_])
+                    ->defaultValue(Enum\RawDataLocation::PARENT_)
+                ->end()
+                ->arrayNode('keys_mapping_values')
+                    ->scalarPrototype()->end()
+                ->end()
+                ->scalarNode('keys_mapping_prefix')->defaultNull()->end()
+                ->append($this->methodNode('keys_mapping_method'))->end()
+            ->end();
+
+        return $node;
+    }
+
+    private function instanceCreationNode() : ArrayNodeDefinition
+    {
+        $node = $this->getRootNode('instance_creation');
+
+        $node
+            ->treatTrueLike(['enabled' => true])
+            ->treatFalseLike(['enabled' => false])
+            ->treatNullLike(['enabled' => true])
+            //->addDefaultsIfNotSet()
+            ->children()
+                ->booleanNode('enabled')->defaultTrue()->end()
+                ->scalarNode('factory_method_name')->defaultNull()->end()
+                ->append($this->methodNode('factory_method'))
+                ->booleanNode('set_properties_through_creation_method_when_possible')->defaultFalse()->end()
+                ->booleanNode('always_access_properties_directly')->defaultFalse()->end()
+                ->append($this->methodNode('after_construction_method'))
+                ->append($this->methodsNode('after_construction_methods'))
             ->end();
 
         return $node;

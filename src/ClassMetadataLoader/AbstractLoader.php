@@ -1,15 +1,15 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadataLoader;
+namespace Kassko\ObjectHydrator\ClassMetadataLoader;
 
-use Big\Hydrator\{ClassMetadata, ClassMetadataLoaderInterface, ModelBuilder};
+use Kassko\ObjectHydrator\{ClassMetadata, ClassMetadataLoaderInterface, ModelBuilder};
 
 abstract class AbstractLoader implements ClassMetadataLoaderInterface
 {
-    public function loadMetadata(object $object) : array
+    public function loadMetadata(string $class) : array
     {
-        return $this->doLoadMetadata($object);
+        return $this->doLoadMetadata($class);
     }
 
-    abstract protected function doLoadMetadata(object $object) : array;
+    abstract protected function doLoadMetadata(string $class) : array;
 }

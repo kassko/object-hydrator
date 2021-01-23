@@ -1,8 +1,8 @@
 <?php
 
-namespace Big\Hydrator\Annotation\Doctrine;
+namespace Kassko\ObjectHydrator\Annotation\Doctrine;
 
-use Big\Hydrator\ClassMetadata\Model;
+use Kassko\ObjectHydrator\ClassMetadata\Model\Enum;
 
 /**
  * @Annotation
@@ -22,24 +22,24 @@ final class DataSource
     public string $id;
     /**
      * @internal
-     * @var \Big\Hydrator\Annotation\Doctrine\Method
+     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Method
      */
     public Method $method;
     /**
      * @internal
      * @var string
      */
-    public string $loadingMode = Model\DataSource::LOADING_MODE_LAZY;
+    public string $loadingMode = Enum\DataSourceLoadingMode::LAZY;
     /**
      * @internal
      * @var bool
      */
-    public bool $indexedByPropertiesKeys = false;
+    public bool $indexedByPropertiesKeys = true;
     /**
      * @internal
      * @var string
      */
-    public string $loadingScope = Model\DataSource::LOADING_SCOPE_DATA_SOURCE;
+    public string $loadingScope = Enum\DataSourceLoadingScope::DATA_SOURCE;
     /**
      * @internal
      * @var array
@@ -51,22 +51,22 @@ final class DataSource
     public ?string $fallbackDataSourceRef = null;
     /**
      * @internal
-     * @var \Big\Hydrator\Annotation\Doctrine\Callbacks
+     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Callbacks
      */
     public ?Callbacks $callbacksUsingMetadata = null;
     /**
      * @internal
-     * @var \Big\Hydrator\Annotation\Doctrine\Callbacks
+     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Callbacks
      */
     public ?Callbacks $callbacksFetchingData = null;
     /**
      * @internal
-     * @var \Big\Hydrator\Annotation\Doctrine\Callbacks
+     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Callbacks
      */
     public ?Callbacks $callbacksHydration = null;
     /**
      * @internal
-     * @var \Big\Hydrator\Annotation\Doctrine\Callbacks
+     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Callbacks
      */
     public ?Callbacks $callbacksAssigningHydratedValue = null;
 }

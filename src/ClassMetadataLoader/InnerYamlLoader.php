@@ -1,13 +1,13 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadataLoader;
+namespace Kassko\ObjectHydrator\ClassMetadataLoader;
 
-use Big\Hydrator\ClassMetadata;
+use Kassko\ObjectHydrator\ClassMetadata;
 use Symfony\Component\Yaml\Parser;
 
 class InnerYamlLoader extends AbstractPhpArrayContentLoader
 {
-    public function supports(object $object) : bool
+    public function supports(string $class) : bool
     {
         /**
             *  [
@@ -18,14 +18,14 @@ class InnerYamlLoader extends AbstractPhpArrayContentLoader
             *      ]
             *  ]
             */
-        $metadataLocation = $this->config->getMappingValue('metadata_location', $object);
+        $metadataLocation = $this->config->getMappingValue('metadata_location', $class);
 
         return isset($metadataLocation['inner_yaml']);
     }
 
-    protected function doLoadMetadata(object $object) : ClassMetadata\Model\Class_
+    protected function doLoadMetadata(string $class) : ClassMetadata\Model\Class_
     {
-        $config = $this->config->getMappingValue('metadata_location', $object)['inner_yaml'];
+        $config = $this->config->getMappingValue('metadata_location', $class)['inner_yaml'];
         $method = $config['method'];
 
         if (isset($config['service'])) {
@@ -37,8 +37,8 @@ class InnerYamlLoader extends AbstractPhpArrayContentLoader
         } elseif (isset($config['static_class'])) {
             $staticClass = $config['static_class'];
             $yamlContent = $staticClass::$method();
-        } else {
-            $yamlContent = $object->$method();
+        } else {//throw an exception
+            //$yamlContent = $class::$method();
         }
 
         $arrayContent = (new Parser())->parse($yamlContent);

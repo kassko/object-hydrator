@@ -1,9 +1,10 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadata\Model\Property;
+namespace Kassko\ObjectHydrator\ClassMetadata\Model\Property;
 
-use Big\Hydrator\{ExpressionEvaluator, MethodInvoker};
-use Big\Hydrator\ClassMetadata\Model\ItemClassCandidate;
+use Kassko\ObjectHydrator\{ExpressionEvaluator, MethodInvoker};
+use Kassko\ObjectHydrator\ClassMetadata\Dto;
+use Kassko\ObjectHydrator\ClassMetadata\Model;
 
 /**
  * @author kko
@@ -64,27 +65,27 @@ final class CollectionType extends Leaf
         return $this->itemClassCandidates;
     }
 
-    public function addItemClassCandidate(ItemClassCandidate $itemClassCandidate) : self
+    public function addItemClassCandidate(Model\ItemClassCandidate $itemClassCandidate) : self
     {
         $this->itemClassCandidates[] = $itemClassCandidate;
 
         return $this;
     }
 
-    public function getCurrentItemCollectionClass(ExpressionEvaluator $expressionEvaluator, MethodInvoker $methodInvoker) : ?string
+    public function getCurrentItemCollectionClass(ExpressionEvaluator $expressionEvaluator, MethodInvoker $methodInvoker) : ?Dto\ClassInfo
     {
         foreach ($this->itemClassCandidates as $itemClassCandidate) {
             $value = $itemClassCandidate->getDiscriminator();
 
             if ($value->isExpression() && true === $expressionEvaluator->resolveAdvancedExpression($value)) {
-                return $itemClassCandidate->getClass();
+                return new Dto\ClassInfo($itemClassCandidate->getClass(), $itemClassCandidate->getRawDataLocation());
             }
 
             if ($value->isMethod() && true === $methodInvoker->invokeMethod($value)) {
-                return $itemClassCandidate->getClass();
+                return new Dto\ClassInfo($itemClassCandidate->getClass(), $itemClassCandidate->getRawDataLocation());
             }
         }
 
-        return $this->itemsClass;
+        return new Dto\ClassInfo($this->itemsClass);
     }
 }

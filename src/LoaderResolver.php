@@ -1,15 +1,15 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
 class LoaderResolver
 {
     private array $loaders = [];
 
-    public function resolve(object $object) : ?ClassMetadataDelegatedLoaderInterface
+    public function resolve(string $class) : ?ClassMetadataDelegatedLoaderInterface
     {
         foreach ($this->loaders as $loader) {
-            if ($loader->supports($object)) {
+            if ($loader->supports($class)) {
                 return $loader;
             }
         }

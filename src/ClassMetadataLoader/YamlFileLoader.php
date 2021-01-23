@@ -1,13 +1,13 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadataLoader;
+namespace Kassko\ObjectHydrator\ClassMetadataLoader;
 
-use Big\Hydrator\ClassMetadata;
+use Kassko\ObjectHydrator\ClassMetadata;
 use Symfony\Component\Yaml\Parser;
 
 class YamlFileLoader extends AbstractPhpArrayContentLoader
 {
-    public function supports(object $object) : bool
+    public function supports(string $class) : bool
     {
         /**
             *  [
@@ -18,14 +18,14 @@ class YamlFileLoader extends AbstractPhpArrayContentLoader
             *      ]
             *  ]
             */
-        $metadataLocation = $this->config->getMappingValue('metadata_location', $object);
+        $metadataLocation = $this->config->getMappingValue('metadata_location', $class);
 
         return isset($metadataLocation['yaml_file']);
     }
 
-    protected function doLoadMetadata(object $object) : ClassMetadata\Model\Class_
+    protected function doLoadMetadata(string $class) : ClassMetadata\Model\Class_
     {
-        $filePath = $this->config->getMappingValue('metadata_location', $object)['yaml_file']['path'];
+        $filePath = $this->config->getMappingValue('metadata_location', $class)['yaml_file']['path'];
         $yamlContent = file_get_contents($filePath);
         $arrayContent = (new Parser())->parse($yamlContent);
 

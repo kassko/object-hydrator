@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\HydratorTest\Phpunit;
+namespace Kassko\ObjectHydratorTest\Phpunit;
 
 use PHPUnit\Framework\{TestListener as BaseTestListener, TestListenerDefaultImplementation, TestSuite, Test};
 

@@ -1,8 +1,8 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadataLoader;
+namespace Kassko\ObjectHydrator\ClassMetadataLoader;
 
-use Big\Hydrator\ClassMetadata;
+use Kassko\ObjectHydrator\ClassMetadata;
 
 abstract class AbstractPhpArrayContentLoader extends AbstractLoader
 {

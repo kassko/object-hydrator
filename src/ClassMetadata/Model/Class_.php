@@ -1,9 +1,9 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadata\Model;
+namespace Kassko\ObjectHydrator\ClassMetadata\Model;
 
-use Big\Hydrator\{ClassMetadata, PropertyCandidatesResolver};
-use Big\Hydrator\ClassMetadata\Repository\ReflectionClassRepository;
+use Kassko\ObjectHydrator\{ClassMetadata, PropertyCandidatesResolver};
+use Kassko\ObjectHydrator\ClassMetadata\Repository;
 
 use function class_exists;
 
@@ -22,14 +22,14 @@ final class Class_
     private ?Callbacks $callbacksAssigningHydratedValue = null;
 
 
-    public function __construct(object $object, ReflectionClassRepository $reflectionClassRepository = null)
+    public function __construct(string $class, Repository\ReflectionClass $reflectionClassRepository = null)
     {
         if (class_exists('Doctrine\Common\Util\ClassUtils')) {//If Doctrine is used, remove eventual proxy.
-            $objectClass = \Doctrine\Common\Util\ClassUtils::getRealClass(get_class($object));
+            $objectClass = \Doctrine\Common\Util\ClassUtils::getRealClass($class);
         }
 
-        $reflectionClass = $reflectionClassRepository ? $reflectionClassRepository->findByObject($object) : null;
-        $this->reflectionClass = $reflectionClass ?? new ClassMetadata\ReflectionClass(\ReflectionClass($object));
+        $reflectionClass = $reflectionClassRepository ? $reflectionClassRepository->findByClass($class) : null;
+        $this->reflectionClass = $reflectionClass ?? ClassMetadata\ReflectionClass::fromClass($class);
 
         $this->callbacksUsingMetadata = new Callbacks;
         $this->callbacksHydration = new Callbacks;
@@ -49,6 +49,18 @@ final class Class_
     public function setReflectionProperties() : self
     {
         $this->reflectionProperties = $reflectionProperties;
+
+        return $this;
+    }
+
+    public function areAccessorsToBypass() : bool
+    {
+        return $this->accessorsToBypass;
+    }
+
+    public function setAccessorsToBypass(bool $accessorsToBypass = true) : self
+    {
+        $this->accessorsToBypass = $accessorsToBypass;
 
         return $this;
     }

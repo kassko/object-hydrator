@@ -1,7 +1,8 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadata\Model;
+namespace Kassko\ObjectHydrator\ClassMetadata\Model;
 
+use Kassko\ObjectHydrator\ClassMetadata\Model\Enum;
 use Doctrine\Common\Collections\ArrayCollection;
 
 use function array_combine;
@@ -11,21 +12,14 @@ use function array_combine;
  */
 final class DataSource
 {
-    public const LOADING_MODE_LAZY = 'lazy';
-    public const LOADING_MODE_EAGER = 'eager';
-    public const LOADING_SCOPE_DATA_SOURCE = 'data_source';
-    public const LOADING_SCOPE_PROPERTY = 'property';
-    public const LOADING_SCOPE_DATA_SOURCE_ONLY_KEYS = 'data_source_only_keys';
-    public const LOADING_SCOPE_DATA_SOURCE_EXCEPT_KEYS = 'data_source_except_keys';
-
     private ?string $id;
     private Method $method;
-    private string $loadingMode = self::LOADING_MODE_LAZY;
-    private string $loadingScope = self::LOADING_SCOPE_DATA_SOURCE;
+    private string $loadingMode = Enum\DataSourceLoadingMode::LAZY;
+    private string $loadingScope = Enum\DataSourceLoadingScope::DATA_SOURCE;
     private array $loadingScopeKeys = [];
-    private bool $indexedByPropertiesKeys = false;
-    private ?DataSource $fallBackDataSource = null;
-    private ?string $fallBackDataSourceRef = null;
+    private bool $indexedByPropertiesKeys = true;
+    private ?DataSource $fallbackDataSource = null;
+    private ?string $fallbackDataSourceRef = null;
     private ?Callbacks $callbacksUsingMetadata = null;
     private ?Callbacks $callbacksFetchingData = null;
     private ?Callbacks $callbacksHydration = null;
@@ -61,12 +55,12 @@ final class DataSource
 
     public function mustBeLazyLoaded() : bool
     {
-        return self::LOADING_MODE_LAZY === $this->loadingMode;
+        return Enum\DataSourceLoadingMode::LAZY === $this->loadingMode;
     }
 
     public function mustBeEagerLoaded() : bool
     {
-        return self::LOADING_MODE_EAGER === $this->loadingMode;
+        return Enum\DataSourceLoadingMode::EAGER === $this->loadingMode;
     }
 
     public function setLoadingMode(string $loadingMode) : self

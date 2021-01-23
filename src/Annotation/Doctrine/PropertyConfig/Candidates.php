@@ -1,8 +1,8 @@
 <?php
 
-namespace Big\Hydrator\Annotation\Doctrine\PropertyConfig;
+namespace Kassko\ObjectHydrator\Annotation\Doctrine\PropertyConfig;
 
-use Big\Hydrator\Annotation\Doctrine\Capability;
+use Kassko\ObjectHydrator\Annotation\Doctrine\Capability;
 
 /**
  * @Annotation
@@ -18,7 +18,7 @@ final class Candidates
     /**
      * One or more DataSource annotations.
      *
-     * @var array<\Big\Hydrator\Annotation\Doctrine\PropertyConfig>
+     * @var array<\Kassko\ObjectHydrator\Annotation\Doctrine\PropertyConfig>
      */
     public array $candidates = [];
     /**

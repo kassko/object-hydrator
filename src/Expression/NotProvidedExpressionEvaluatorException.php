@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\Hydrator\Exception;
+namespace Kassko\ObjectHydrator\Exception;
 
 class NotProvidedExpressionEvaluatorException extends \Exception
 {

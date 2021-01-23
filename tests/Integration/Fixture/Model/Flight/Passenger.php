@@ -1,8 +1,8 @@
 <?php
 
-namespace Big\HydratorTest\Integration\Fixture\Model\Flight;
+namespace Kassko\ObjectHydratorTest\Integration\Fixture\Model\Flight;
 
-use Big\Hydrator\Annotation\Doctrine as BHY;
+use Kassko\ObjectHydrator\Annotation\Doctrine as BHY;
 
 class Passenger
 {

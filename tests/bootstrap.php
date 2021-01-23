@@ -4,4 +4,4 @@ if (!is_file($autoloadFile = __DIR__ . '/../vendor/autoload.php')) {
 }
 
 $loader = require $autoloadFile;
-$loader->addPsr4('Big\HydratorTest\\', __DIR__);
+$loader->addPsr4('Kassko\ObjectHydratorTest\\', __DIR__);

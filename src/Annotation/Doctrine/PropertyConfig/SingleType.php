@@ -1,9 +1,9 @@
 <?php
 
-namespace Big\Hydrator\Annotation\Doctrine\PropertyConfig;
+namespace Kassko\ObjectHydrator\Annotation\Doctrine\PropertyConfig;
 
-use Big\Hydrator\Annotation\Doctrine\Capability;
-use Big\Hydrator\Annotation\Doctrine\PropertyConfig;
+use Kassko\ObjectHydrator\Annotation\Doctrine\Capability;
+use Kassko\ObjectHydrator\Annotation\Doctrine\PropertyConfig;
 
 /**
  * @Annotation
@@ -17,7 +17,7 @@ final class SingleType extends PropertyConfig
 
     public function __construct(array $data = [])
     {
-        parent::__construct();
+        parent::__construct($data);
 
         foreach ($data as $key => $datum) {
             $this->$key = $datum;

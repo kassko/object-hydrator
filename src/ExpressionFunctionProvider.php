@@ -1,8 +1,8 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
-use Big\Hydrator\{ClassMetadata, Config, MemberAccessStrategyFactory};
+use Kassko\ObjectHydrator\{ClassMetadata, Config, MemberAccessStrategyFactory};
 use Symfony\Component\ExpressionLanguage\{ExpressionFunction, ExpressionFunctionProviderInterface, ExpressionLanguage};
 
 use function sprintf;

@@ -1,10 +1,9 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
-use Big\Hydrator\ConfigValidator;
+use Kassko\ObjectHydrator\ConfigurationProcessor;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Config\Definition\Processor;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 
 use function class_exists;
@@ -13,66 +12,68 @@ class HydratorBuilder
 {
     private array $configs = [];
 
-    public function build() : \Big\Hydrator\Hydrator
+    public function build() : \Kassko\ObjectHydrator\Hydrator
     {
-        $config = new \Big\Hydrator\Config($this->getValidatedConfig());
+        $config = new \Kassko\ObjectHydrator\Config((new ConfigurationProcessor)->processConfig($this->configs));
         $configValues = $config->getValues();
 
-        $reflectionClassRepository = new \Big\Hydrator\ClassMetadata\Repository\ReflectionClassRepository;
+        $reflectionClassRepository = new \Kassko\ObjectHydrator\ClassMetadata\Repository\ReflectionClass;
 
-        $classMetadataLoader = new \Big\Hydrator\ClassMetadataLoader(
-            (new \Big\Hydrator\LoaderResolver)->addLoader(
+        $classMetadataLoader = new \Kassko\ObjectHydrator\ClassMetadataLoader(
+            (new \Kassko\ObjectHydrator\LoaderResolver)->addLoader(
                 (
-                    new \Big\Hydrator\ClassMetadataLoader\DoctrineAnnotationLoader(
+                    new \Kassko\ObjectHydrator\ClassMetadataLoader\DoctrineAnnotationLoader(
                         new \Doctrine\Common\Annotations\AnnotationReader
                     )
                 )->setConfig(
-                    new \Big\Hydrator\ClassMetadataConfig($config['class_metadata'])
+                    new \Kassko\ObjectHydrator\ClassMetadataConfig($config['class_metadata'])
                 )->setReflectionClassRepository($reflectionClassRepository)
             )
         );
 
-        $modelBuilder = new \Big\Hydrator\ModelBuilder(
-            new \Big\Hydrator\ClassMetadata\Repository\DataSource,
-            new \Big\Hydrator\ClassMetadata\Repository\Expression,
-            new \Big\Hydrator\ClassMetadata\Repository\Method,
-            $reflectionClassRepository
-        );
+        $expressionContext = new \Kassko\ObjectHydrator\ExpressionContext;
 
-        $modelLoader = new \Big\Hydrator\ModelLoader(
-            $classMetadataLoader,
-            $modelBuilder
-        );
-
-        $expressionContext = new \Big\Hydrator\ExpressionContext;
-        $expressionEvaluator = new \Big\Hydrator\ExpressionEvaluator(
+        $expressionEvaluator = new \Kassko\ObjectHydrator\ExpressionEvaluator(
             $expressionContext,
             $config->getPartition('data_source_expressions'),
             class_exists(ExpressionLanguage::class, true) ? new ExpressionLanguage : null
         );
 
-        $methodInvoker = new \Big\Hydrator\MethodInvoker($expressionEvaluator);
+        $methodInvoker = new \Kassko\ObjectHydrator\MethodInvoker($expressionEvaluator);
         if (isset($configValues['service_locator'])) {
             $methodInvoker->setServiceLocator($config['service_locator']);
         }
 
-        $dataFetcher = new \Big\Hydrator\DataFetcher($methodInvoker);
+        $modelBuilder = new \Kassko\ObjectHydrator\ModelBuilder(
+            new \Kassko\ObjectHydrator\ClassMetadata\Repository\DataSource,
+            new \Kassko\ObjectHydrator\ClassMetadata\Repository\Expression,
+            new \Kassko\ObjectHydrator\ClassMetadata\Repository\Method,
+            $reflectionClassRepository,
+            $methodInvoker
+        );
 
-        $propertyCandidatesResolver = new \Big\Hydrator\PropertyCandidatesResolver($expressionEvaluator, $methodInvoker);
+        $modelLoader = new \Kassko\ObjectHydrator\ModelLoader(
+            $classMetadataLoader,
+            $modelBuilder
+        );
 
-        $memberAccessStrategyFactory = new \Big\Hydrator\MemberAccessStrategyFactory;
+        $dataFetcher = new \Kassko\ObjectHydrator\DataFetcher($methodInvoker);
 
-        $objectLoadabilityChecker = new \Big\Hydrator\ObjectLoadabilityChecker;
+        $propertyCandidatesResolver = new \Kassko\ObjectHydrator\PropertyCandidatesResolver($expressionEvaluator, $methodInvoker);
 
-        $hydrator = (new \Big\Hydrator\Hydrator(
+        $memberAccessStrategyFactory = new \Kassko\ObjectHydrator\MemberAccessStrategyFactory;
+
+        $objectLoadabilityChecker = new \Kassko\ObjectHydrator\ObjectLoadabilityChecker;
+
+        $hydrator = (new \Kassko\ObjectHydrator\Hydrator(
             $modelLoader,
             $memberAccessStrategyFactory,
-            new \Big\Hydrator\IdentityMap($objectLoadabilityChecker),
+            new \Kassko\ObjectHydrator\IdentityMap($objectLoadabilityChecker),
             $objectLoadabilityChecker,
             $dataFetcher,
             $methodInvoker,
             $expressionContext,
-            (new \Big\Hydrator\EssentialDataProvider(
+            (new \Kassko\ObjectHydrator\EssentialDataProvider(
                 $dataFetcher,
                 $memberAccessStrategyFactory,
                 $configValues['service_locator'] ? $config['service_locator'] : null
@@ -107,93 +108,6 @@ class HydratorBuilder
 
         $propertyLoader = new PropertyLoader($hydrator);
         Registry::getInstance()[Registry::KEY_PROPERTY_LOADER] = $propertyLoader;
-    }
-
-    private function getValidatedConfig() : array
-    {
-        $processor = new Processor();
-        $configValidator = new ConfigValidator();
-
-        $validatedConfig = $processor->processConfiguration(
-            $configValidator,
-            $this->configs
-        );
-
-        return $this->finalizeConfig($validatedConfig);
-    }
-
-    private function finalizeConfig(array $config) : array
-    {
-        if (isset($config['data_source_expressions'])) {
-            $config['data_source_expressions'] = $this->completeExpressionConfig($config['data_source_expressions']);
-            $config = $this->resolveServiceLocatorConfig($config);
-
-            if (isset($config['logger_key']) && !isset($config['service_locator'])) {
-                throw new \LogicException(sprintf(
-                    'Cannot validate configuration.' .
-                    PHP_EOL . 'As you specified a logger key, you must provide a service locator' .
-                    PHP_EOL . 'to locate the logger service and resolve it.' .
-                    PHP_EOL . 'The key "%s" required "%s".'
-                ));
-            }
-        }
-
-        return $config;
-    }
-
-    private function completeExpressionConfig(array $expressionConfig) : array
-    {
-        foreach ($expressionConfig['keywords'] as $key => $item) {
-            $expressionConfig['keywords'][$key . '_size'] = strlen($item);
-        }
-
-        foreach ($expressionConfig['markers'] as $key => $item) {
-            $expressionConfig['markers'][$key . '_size'] = strlen($item);
-        }
-
-        return $expressionConfig;
-    }
-
-    private function resolveServiceLocatorConfig(array $config) : array
-    {
-        $config['service_locator'] = null;
-        $count = 0;
-
-        if (isset($config['psr_container'])) {
-            if (null !== $config['psr_container'] && ! $config['psr_container'] instanceof \Psr\Container\ContainerInterface) {
-                throw new \LogicException(sprintf(
-                    'Cannot configure path "big_hydrator.psr_container".' .
-                    PHP_EOL . 'The value set to this path must be an instance of "%s". Given type "%s".',
-                    \Psr\Container\ContainerInterface::class,
-                    is_object($config) ? get_class($config) : gettype($config)
-                ));
-            }
-            $config['service_locator'] = fn ($serviceKey) => ($config['psr_container'])($serviceKey);
-            unset($config['psr_container']);
-            $count++;
-
-            return $config;
-        }
-
-        if (isset($config['service_provider'])) {
-            if ($count) {
-                throw new \LogicException(sprintf(
-                    'Cannot configure path "big_hydrator.service_provider" section.' .
-                    PHP_EOL . 'You must configure either "big_hydrator.psr_container" or "big_hydrator.service_provider" but not both pathes.'
-                ));
-            }
-            if (null !== $config['service_provider'] && ! is_callable($config['service_provider'])) {
-                throw new \LogicException(sprintf(
-                    'Cannot configure the key "big_hydrator.service_provider".' .
-                    PHP_EOL . 'The value set to this key must be a callable. Given type "%s".',
-                    is_object($config) ? get_class($config) : gettype($config)
-                ));
-            }
-            $config['service_locator'] = $config['service_provider'];
-            unset($config['service_provider']);
-        }
-
-        return $config;
     }
 }
 

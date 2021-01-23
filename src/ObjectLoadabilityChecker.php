@@ -1,8 +1,8 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
-use Big\Hydrator\ObjectExtension\LoadableTrait;
+use Kassko\ObjectHydrator\ObjectExtension\LoadableTrait;
 
 use function array_merge;
 use function array_pop;

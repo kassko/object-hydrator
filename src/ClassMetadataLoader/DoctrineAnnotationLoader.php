@@ -1,9 +1,9 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadataLoader;
+namespace Kassko\ObjectHydrator\ClassMetadataLoader;
 
-use Big\Hydrator\ClassMetadata;
-use Big\Hydrator\Annotation\Doctrine as Annotation;
+use Kassko\ObjectHydrator\ClassMetadata;
+use Kassko\ObjectHydrator\Annotation\Doctrine as Annotation;
 use Doctrine\Common\Annotations\AnnotationReader;
 
 use function get_class;
@@ -19,20 +19,20 @@ class DoctrineAnnotationLoader extends AbstractDelegatedLoader
         $this->reader = $reader;
     }
 
-    public function supports(object $object) : bool
-    {
-        $doctrineAnnotations = $this->getValueByPathAndObject('annotations.type', $object);
+    public function supports(string $class) : bool
+    {return true;
+        $doctrineAnnotations = $this->getValueByPathAndNamespace('annotations.type', $class);
 
         return $doctrineAnnotations
         && (version_compare(\PHP_VERSION, '8.0.0') < 0
-        || (method_exists($object, 'preferDoctrineAnnotations') && $object->preferDoctrineAnnotations()));
+        || (method_exists($class, 'preferDoctrineAnnotations') && $class::preferDoctrineAnnotations()));
     }
 
-    protected function doLoadMetadata(object $object) : array
+    protected function doLoadMetadata(string $class) : array
     {
         $classMetadata = [];
 
-        $reflectionClass = $this->reflectionClassRepository->addReflectionClassByObject($object);
+        $reflectionClass = $this->reflectionClassRepository->addReflectionClassByClass($class);
 
         $classLevelAnnotations = $this->getClassLevelAnnotationsByClass($reflectionClass->getReflectionClassesHierarchy());
 
@@ -64,7 +64,6 @@ class DoctrineAnnotationLoader extends AbstractDelegatedLoader
             $classMetadata['data_sources'] = $classLevelAnnotations[Annotation\DataSources::class]->toArray()['items'];
         }
 
-
         foreach ($reflectionClass->getProperties() as $reflectionProperty) {
             $propertyName = $reflectionProperty->getName();
             if ('__registered' === $propertyName) {
@@ -75,6 +74,8 @@ class DoctrineAnnotationLoader extends AbstractDelegatedLoader
 
             if (isset($propertyLevelAnnotationsByClass[Annotation\PropertyConfig\SingleType::class])) {
                 $classMetadata['properties'][$propertyName]['single_type'] = $propertyLevelAnnotationsByClass[Annotation\PropertyConfig\SingleType::class]->toArray();
+
+                //var_dump($classMetadata['properties'][$propertyName]['single_type']);
             }
 
             if (isset($propertyLevelAnnotationsByClass[Annotation\PropertyConfig\CollectionType::class])) {

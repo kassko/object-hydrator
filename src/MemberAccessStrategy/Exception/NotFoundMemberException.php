@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\Hydrator\MemberAccessStrategy\Exception;
+namespace Kassko\ObjectHydrator\MemberAccessStrategy\Exception;
 
 /**
  * Exception thrown when a member (a field or a method) is not found in an object.

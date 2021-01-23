@@ -1,8 +1,8 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
-use Big\Hydrator\ClassMetadata;
+use Kassko\ObjectHydrator\ClassMetadata;
 
 class DataFetcher
 {
@@ -38,8 +38,11 @@ class DataFetcher
         return $dataByDataSources;
     }
 
-    private function fetchDataFromDataSource(ClassMetadata\Model\DataSource $dataSourceMetadata, object $object, ClassMetadata\Model\Class_ $classMetadata)
-    {
+    private function fetchDataFromDataSource(
+        ClassMetadata\Model\DataSource $dataSourceMetadata,
+        object $object,
+        ClassMetadata\Model\Class_ $classMetadata
+    ) {
         $this->methodInvoker->invokeVisitorsCallbacks($dataSourceMetadata->getCallbacksUsingMetadata()->getBeforeCollection(), $dataSourceMetadata);
         $this->methodInvoker->invokeVisitorsCallbacks($dataSourceMetadata->getCallbacksFetchingData()->getBeforeCollection());
 
@@ -48,7 +51,6 @@ class DataFetcher
         }
 
         if (ClassMetadata\Model\DataSource::ON_FAIL_CHECK_RETURN_VALUE === $dataSourceMetadata->getOnFail()) {
-
             $data = $this->invokeDataSource($dataSourceMetadata, $classMetadata);
 
             if ($dataSourceMetadata->areDataInvalid($data)) {

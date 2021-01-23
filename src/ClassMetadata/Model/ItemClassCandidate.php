@@ -1,14 +1,20 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadata\Model;
+namespace Kassko\ObjectHydrator\ClassMetadata\Model;
+
+use Kassko\ObjectHydrator\ClassMetadata\Model\Fragment;
 
 /**
  * @author kko
  */
 final class ItemClassCandidate
 {
+    use Fragment\InstanceCreationAwareTrait;
+    use Fragment\RawDataLocationAwareTrait;
+
     private string $class;
     private ?DynamicValueInterface $discriminator = null;
+
 
     public function __construct(string $class)
     {

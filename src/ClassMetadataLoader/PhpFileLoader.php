@@ -1,12 +1,12 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadataLoader;
+namespace Kassko\ObjectHydrator\ClassMetadataLoader;
 
-use Big\Hydrator\ClassMetadata;
+use Kassko\ObjectHydrator\ClassMetadata;
 
 class PhpFileLoader extends AbstractPhpArrayContentLoader
 {
-    public function supports(object $object) : bool
+    public function supports(string $class) : bool
     {
         /**
           *  [
@@ -17,14 +17,14 @@ class PhpFileLoader extends AbstractPhpArrayContentLoader
           *      ]
           *  ]
           */
-        $metadataLocation = $this->config->getMappingValue('metadata_location', $object);
+        $metadataLocation = $this->config->getMappingValue('metadata_location', $class);
 
         return isset($metadataLocation['php_file']);
     }
 
-    protected function doLoadMetadata(object $object) : ClassMetadata\Model\Class_
+    protected function doLoadMetadata(string $class) : ClassMetadata\Model\Class_
     {
-        $filePath = $this->config->getMappingValue('metadata_location', $object)['php_file']['path'];
+        $filePath = $this->config->getMappingValue('metadata_location', $class)['php_file']['path'];
         $content = require $filePath;
 
         return $this->loadMetadataFromContent($content);

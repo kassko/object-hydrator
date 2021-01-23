@@ -1,8 +1,9 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadata\Model\Property;
+namespace Kassko\ObjectHydrator\ClassMetadata\Model\Property;
 
-use Big\Hydrator\ClassMetadata\Model\{Property, Callbacks, DataSource, DynamicValueInterface};
+use Kassko\ObjectHydrator\ClassMetadata\Model\{Callbacks, DataSource, DynamicValueInterface, RawDataLocation, Property};
+use Kassko\ObjectHydrator\ClassMetadata\Model\Fragment;
 use Doctrine\Common\Collections\ArrayCollection;
 
 /**
@@ -10,15 +11,18 @@ use Doctrine\Common\Collections\ArrayCollection;
  */
 abstract class Leaf extends Property
 {
+    use Fragment\InstanceCreationAwareTrait;
+    use Fragment\RawDataLocationAwareTrait;
+
     private ?string $keyInRawData = null;
     private ?string $type = null;
     private ?string $class = null;
-    private bool $hydrateRawData = true;
+    //private bool $hydrateRawData = true;
     private ?DataSource $dataSource = null;
     private ?string $getter = null;
     private ?string $setter = null;
-    private $defaultValue = null;
     private array $variables = [];
+    private $defaultValue = null;
     private ?Callbacks $callbacksUsingMetadata = null;
     private ?Callbacks $callbacksFetchingData = null;
     private ?Callbacks $callbacksHydration = null;
@@ -79,10 +83,10 @@ abstract class Leaf extends Property
         return $this;
     }
 
-    public function areRawDataToHydrate() : bool
+    /*public function areRawDataToHydrate() : bool
     {
         return $this->hydrateRawData;
-    }
+    }*/
 
     public function hasDataSource() : bool
     {
@@ -129,23 +133,6 @@ abstract class Leaf extends Property
         return $this;
     }
 
-    public function hasDefaultValue() : bool
-    {
-        return isset($this->defaultValue);
-    }
-
-    public function getDefaultValue() : ?string
-    {
-        return $this->defaultValue;
-    }
-
-    public function setDefaultValue(array $defaultValue) : self
-    {
-        $this->defaultValue = $defaultValue;
-
-        return $this;
-    }
-
     public function hasVariables() : bool
     {
         return count($this->variables) > 0;
@@ -159,6 +146,23 @@ abstract class Leaf extends Property
     public function setVariables(array $variables) : self
     {
         $this->variables = $variables;
+
+        return $this;
+    }
+
+    public function hasDefaultValue() : bool
+    {
+        return isset($this->defaultValue);
+    }
+
+    public function getDefaultValue() : ?string
+    {
+        return $this->defaultValue;
+    }
+
+    public function setDefaultValue(array $defaultValue) : self
+    {
+        $this->defaultValue = $defaultValue;
 
         return $this;
     }

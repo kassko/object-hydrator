@@ -1,8 +1,8 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
-use Big\Hydrator\{ClassMetadata, MemberAccessStrategy};
+use Kassko\ObjectHydrator\{ClassMetadata, MemberAccessStrategy};
 
 class MemberAccessStrategyFactory
 {

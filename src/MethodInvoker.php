@@ -1,8 +1,8 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
-use Big\Hydrator\ClassMetadata;
+use Kassko\ObjectHydrator\ClassMetadata;
 use Psr\Container\ContainerInterface;
 
 use function is_callable;
@@ -16,9 +16,10 @@ class MethodInvoker
     private ?CachePrototype $cachePrototype = null;
 
 
-    public function __construct(ExpressionEvaluator $expressionEvaluator)
+    public function __construct(ExpressionEvaluator $expressionEvaluator, ?\Closure $serviceLocator = null)
     {
         $this->expressionEvaluator = $expressionEvaluator;
+        $this->serviceLocator = $serviceLocator;
     }
 
     public function setServiceLocator(\Closure $serviceLocator) : self
@@ -35,7 +36,7 @@ class MethodInvoker
         return $this;
     }
 
-    public function invokeMethod(?ClassMetadata\Model\Method $method, array $args = [])
+    public function invokeMethod(?ClassMetadata\Model\Method $method, array $args = [], ?object $instance = null)
     {
         if (null === $method) {
             return null;
@@ -44,10 +45,8 @@ class MethodInvoker
         $data = null;
 
         if (0 === count($args)) {
-            $args = $method->getArgs();
+            $args = $this->expressionEvaluator->resolveExpressions($method->getArgs());
         }
-
-        $args = $this->expressionEvaluator->resolveExpressions($args ?: $method->getArgs());
 
         if ($method->isStatic()) {
             $class = $method->getClass();
@@ -59,7 +58,9 @@ class MethodInvoker
 
             $data = $this->invokeStaticMethodWith($class, $methodName, $args, null /*$this->getCache()*/);
         } else {
-            if ($method->isInvokerAService()) {
+            if (null !== $instance) {
+                $object = $instance;
+            } elseif ($method->isInvokerAService()) {
                 try {
                     $object = ($this->serviceLocator)($method->getServiceKey());
                 } catch (ContainerExceptionInterface $e) {

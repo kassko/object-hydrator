@@ -1,12 +1,12 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadataLoader;
+namespace Kassko\ObjectHydrator\ClassMetadataLoader;
 
-use Big\Hydrator\ClassMetadata;
+use Kassko\ObjectHydrator\ClassMetadata;
 
 class InnerPhpLoader extends AbstractDelegatedLoader
 {
-    public function supports(object $object) : bool
+    public function supports(string $class) : bool
     {
         /**
           *  [
@@ -17,14 +17,14 @@ class InnerPhpLoader extends AbstractDelegatedLoader
           *      ]
           *  ]
           */
-        $metadataLocation = $this->config->getMappingValue('metadata_location', $object);
+        $metadataLocation = $this->config->getMappingValue('metadata_location', $class);
 
         return isset($metadataLocation['inner_php']);
     }
 
-    protected function doLoadMetadata(object $object) : ClassMetadata\Model\Class_
+    protected function doLoadMetadata(string $class) : ClassMetadata\Model\Class_
     {
-        $config = $this->config->getMappingValue('metadata_location', $object)['inner_php'];
+        $config = $this->config->getMappingValue('metadata_location', $class)['inner_php'];
         $method = $config['method'];
 
         if (isset($config['service'])) {
@@ -36,8 +36,8 @@ class InnerPhpLoader extends AbstractDelegatedLoader
         } elseif (isset($config['static_class'])) {
             $staticClass = $config['static_class'];
             $content = $staticClass::$method();
-        } else {
-            $content = $object->$method();
+        } else {//throw an exception
+            //$content = $object->$method();
         }
 
         return $this->loadMetadataFromContent($content);

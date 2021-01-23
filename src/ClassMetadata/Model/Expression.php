@@ -1,8 +1,8 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadata\Model;
+namespace Kassko\ObjectHydrator\ClassMetadata\Model;
 
-use Big\Hydrator\ClassMetadata\Model\DynamicValueAbstract;
+use Kassko\ObjectHydrator\ClassMetadata\Model\DynamicValueAbstract;
 
 /**
  * @author kko

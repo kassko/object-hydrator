@@ -1,8 +1,8 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
-use Big\Hydrator\ClassMetadata;
+use Kassko\ObjectHydrator\ClassMetadata;
 use Doctrine\Common\Annotations\AnnotationReader;
 
 class ClassMetadataLoader implements ClassMetadataLoaderInterface
@@ -14,9 +14,9 @@ class ClassMetadataLoader implements ClassMetadataLoaderInterface
         $this->loaderResolver = $loaderResolver;
     }
 
-    public function loadMetadata(object $object) : array
+    public function loadMetadata(string $class) : array
     {
-        return ($loader = $this->loaderResolver->resolve($object))
-        && ($classMetadata = $loader->loadMetadata($object)) ? $classMetadata : [];
+        return ($loader = $this->loaderResolver->resolve($class))
+        && ($classMetadata = $loader->loadMetadata($class)) ? $classMetadata : [];
     }
 }

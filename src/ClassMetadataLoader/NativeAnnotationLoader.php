@@ -1,23 +1,23 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadataLoader;
+namespace Kassko\ObjectHydrator\ClassMetadataLoader;
 
-use Big\Hydrator\ClassMetadata;
+use Kassko\ObjectHydrator\ClassMetadata;
 
 use function method_exists;
 
 class NativeAnnotationLoader extends AbstractDelegatedLoader
 {
-    public function supports(object $object) : bool
+    public function supports(string $class) : bool
     {
-    	$metadataLocation = $this->config->getMappingValue('metadata_location', $object);
+    	$metadataLocation = $this->config->getMappingValue('metadata_location', $class);
 
         return isset($metadataLocation['native_annotations'])
         && version_compare(\PHP_VERSION, '8.0.0') >= 0
-        && (! method_exists($object, 'preferDoctrineAnnotations') || ! $object->preferDoctrineAnnotations());
+        && (! method_exists($class, 'preferDoctrineAnnotations') || ! $class::preferDoctrineAnnotations());
     }
 
-    protected function doLoadMetadata(object $object) : ClassMetadata\Model\Class_;
+    protected function doLoadMetadata(string $class) : ClassMetadata\Model\Class_;
     {
         return new ClassMetadata;
     }

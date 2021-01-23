@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
 use function array_key_exists;
 use function is_array;

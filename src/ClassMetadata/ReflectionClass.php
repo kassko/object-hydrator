@@ -1,5 +1,5 @@
 <?php
-namespace Big\Hydrator\ClassMetadata;
+namespace Kassko\ObjectHydrator\ClassMetadata;
 
 final class ReflectionClass
 {
@@ -24,7 +24,7 @@ final class ReflectionClass
         return new self($reflectionClass);
     }
 
-    public function getNativeReflectionClass() : array
+    public function getNativeReflectionClass() : \ReflectionClass
     {
         return $this->nativeReflectionClass;
     }
@@ -119,7 +119,8 @@ final class ReflectionClass
     {
         $parentsClassFilter = \ReflectionMethod::IS_PUBLIC
             | \ReflectionMethod::IS_PROTECTED
-            | \ReflectionMethod::IS_FINAL;
+            | \ReflectionMethod::IS_FINAL
+            | \ReflectionMethod::IS_STATIC;
 
         $childClassFilter = $parentsClassFilter | \ReflectionMethod::IS_PRIVATE;
 

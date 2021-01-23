@@ -1,8 +1,8 @@
 <?php
 
-namespace Big\HydratorTest\Integration;
+namespace Kassko\ObjectHydratorTest\Integration;
 
-use Big\Hydrator\{Annotation\Doctrine as BHY, HydratorBuilder};
+use Kassko\ObjectHydrator\{Annotation\Doctrine as BHY, HydratorBuilder};
 use PHPUnit\Framework\TestCase;
 
 class _001_PerformBasicObjectHydrationTest extends TestCase

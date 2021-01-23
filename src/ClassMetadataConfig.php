@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
 use function get_class;
 

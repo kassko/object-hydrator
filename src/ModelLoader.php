@@ -1,14 +1,15 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
-use Big\Hydrator\ClassMetadataLoader;
-use Big\Hydrator\ModelBuilder;
+use Kassko\ObjectHydrator\ClassMetadataLoader;
+use Kassko\ObjectHydrator\ModelBuilder;
 
 class ModelLoader
 {
     private ClassMetadataLoader $classMetadataLoader;
     private ModelBuilder $modelBuilder;
+    private array $cache = [];
 
     public function __construct(ClassMetadataLoader $classMetadataLoader, ModelBuilder $modelBuilder)
     {
@@ -16,19 +17,16 @@ class ModelLoader
         $this->modelBuilder = $modelBuilder;
     }
 
-    public function load(object $object) : ClassMetadata\Model\Class_
+    public function load(string $class) : ClassMetadata\Model\Class_
     {
-        $arrayMetadata = $this->classMetadataLoader->loadMetadata($object);
-        $classMetadata = $this->modelBuilder->setObject($object)->addConfig($arrayMetadata)->build();
+        if (isset($this->cache[$class])) {
+            return $this->cache[$class];
+        }
+
+        $arrayMetadata = $this->classMetadataLoader->loadMetadata($class);
+        $classMetadata = $this->modelBuilder->setClass($class)->addConfig($arrayMetadata)->build();
 
 
-        return $classMetadata;
+        return $this->cache[$class] = $classMetadata;
     }
-
-    /*public function loadMetadata(object $object) : ClassMetadata\Model\Class_
-    {
-        $this->loadModel($object);
-
-        return $this->classMetadataLoader->loadMetadata($object);
-    }*/
 }

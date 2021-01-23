@@ -1,10 +1,10 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
-use Big\Hydrator\ClassMetadata;
+use Kassko\ObjectHydrator\ClassMetadata;
 
 interface ClassMetadataLoaderInterface
 {
-    public function loadMetadata(object $object) : array;
+    public function loadMetadata(string $class) : array;
 }

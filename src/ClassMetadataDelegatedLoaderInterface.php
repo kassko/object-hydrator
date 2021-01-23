@@ -1,8 +1,8 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
 interface ClassMetadataDelegatedLoaderInterface
 {
-    public function supports(object $object) : bool;
+    public function supports(string $class) : bool;
 }

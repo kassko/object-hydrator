@@ -1,16 +1,16 @@
 <?php
 
-namespace Big\Hydrator\MemberAccessStrategy;
+namespace Kassko\ObjectHydrator\MemberAccessStrategy;
 
-use Big\Hydrator\ClassMetadata;
-use Big\Hydrator\MemberAccessStrategy\Exception\NotFoundMemberException;
+use Kassko\ObjectHydrator\ClassMetadata;
+use Kassko\ObjectHydrator\MemberAccessStrategy\Exception\NotFoundMemberException;
 
 /**
 * Access logic by property to object members to set with hydrated/model value.
 *
 * @author kko
 */
-class Property implements \Big\Hydrator\MemberAccessStrategyInterface
+class Property implements \Kassko\ObjectHydrator\MemberAccessStrategyInterface
 {
     private $object;
     private $reflectionClass;
@@ -38,22 +38,36 @@ class Property implements \Big\Hydrator\MemberAccessStrategyInterface
 
     private function doGetValue(string $propertyName)
     {
-        $reflProperty = $this->getAccessibleProperty($propertyName);
+        $accessor = \Closure::bind(function ($object, $propertyName) {
+            return $object->$propertyName;
+        }, null, get_class($this->object));
+
+        return $accessor($this->object, $propertyName);
+
+        /*$reflProperty = $this->getAccessibleProperty($propertyName);
         if (false === $reflProperty) {
             throw new NotFoundMemberException(sprintf('Not found member "%s::%s"', get_class($this->object), $propertyName));
         }
 
-        return $reflProperty->getValue($this->object);
+        return $reflProperty->getValue($this->object);*/
     }
 
     private function doSetValue(string $propertyName, $value) : void
     {
+        $accessor = \Closure::bind(function ($object, $propertyName, $value) {
+            $object->$propertyName = $value;
+        }, null, get_class($this->object));
+
+        $accessor($this->object, $propertyName, $value);
+
+        /*
         $reflProperty = $this->getAccessibleProperty($propertyName);
         if (false === $reflProperty) {
             return;
         }
 
-        $reflProperty->setValue($this->object, $value);
+        //$reflProperty->setValue($this->object, $value);
+        */
     }
 
     private function getAccessibleProperty(string $propertyName) : \ReflectionProperty

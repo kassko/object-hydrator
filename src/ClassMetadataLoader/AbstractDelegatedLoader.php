@@ -1,14 +1,14 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadataLoader;
+namespace Kassko\ObjectHydrator\ClassMetadataLoader;
 
-use Big\Hydrator\ClassMetadata\Repository\ReflectionClassRepository;
-use Big\Hydrator\{ClassMetadataConfig, ClassMetadataDelegatedLoaderInterface};
+use Kassko\ObjectHydrator\ClassMetadata\Repository;
+use Kassko\ObjectHydrator\{ClassMetadataConfig, ClassMetadataDelegatedLoaderInterface};
 
 abstract class AbstractDelegatedLoader extends AbstractLoader implements ClassMetadataDelegatedLoaderInterface
 {
 	protected ClassMetadataConfig $config;
-    protected ReflectionClassRepository $reflectionClassRepository;
+    protected Repository\ReflectionClass $reflectionClassRepository;
 
     public function setConfig(ClassMetadataConfig $config) : self
     {
@@ -17,16 +17,11 @@ abstract class AbstractDelegatedLoader extends AbstractLoader implements ClassMe
         return $this;
     }
 
-    public function setReflectionClassRepository(ReflectionClassRepository $reflectionClassRepository) : self
+    public function setReflectionClassRepository(Repository\ReflectionClass $reflectionClassRepository) : self
     {
         $this->reflectionClassRepository = $reflectionClassRepository;
 
         return $this;
-    }
-
-    public function getValueByPathAndObject(string $key, object $object)
-    {
-        return $this->config->getValueByPathAndObject($key, $object);
     }
 
     public function getValueByPathAndNamespace(string $key, string $namespace)

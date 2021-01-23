@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadata\Model\Property;
+namespace Kassko\ObjectHydrator\ClassMetadata\Model\Property;
 
 /**
  * @author kko

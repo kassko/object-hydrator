@@ -1,8 +1,8 @@
 <?php
 
-namespace Big\Hydrator\ClassMetadata\Model;
+namespace Kassko\ObjectHydrator\ClassMetadata\Model;
 
-use Big\Hydrator\ClassMetadata\Model\DynamicValueAbstract;
+use Kassko\ObjectHydrator\ClassMetadata\Model\DynamicValueAbstract;
 
 /**
  * @author kko
@@ -13,6 +13,7 @@ final class Method extends DynamicValueAbstract
     public ?string $class = null;
     public ?string $serviceKey = null;
     public ?string $name = null;
+    public ?bool $static = null;
     public array $args = [];
     public bool $magicCallAllowed = false;
 
@@ -73,7 +74,7 @@ final class Method extends DynamicValueAbstract
         return $this;
     }
 
-    public function isStatic() : ?string
+    public function isStatic() : ?bool
     {
         return $this->static;
     }

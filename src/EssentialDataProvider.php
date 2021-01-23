@@ -1,8 +1,8 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
-use Big\Hydrator\PropertyCandidatesResolverAwareTrait;
+use Kassko\ObjectHydrator\PropertyCandidatesResolverAwareTrait;
 
 /**
  * EssentialDataProvider
@@ -86,7 +86,7 @@ class EssentialDataProvider
     public function fetchDataSourcesByTag(string $dataSourceTag) : void
     {
         $this->dataFetcher->fetchDataFromDataSource(
-            $this->classMetadata->findDataSourcesByTag($dataSourceId),
+            $this->classMetadata->findDataSourcesByTag($dataSourceTag),
             $this->object,
             $this->classMetadata
         );

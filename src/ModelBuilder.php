@@ -1,37 +1,41 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
-use Big\Hydrator\ClassMetadata\{Model, ReflectionClass, Repository};
+use Kassko\ObjectHydrator\ClassMetadata\{Model, ReflectionClass, Repository};
+use Kassko\ObjectHydrator\MethodInvoker;
 use Doctrine\Common\CollectionType\ArrayCollection;
 use Symfony\Component\Config\Definition\Processor;
 
 class ModelBuilder
 {
-    private object $object;
+    private string $class;
     private array $configs = [];
     private ReflectionClass $reflectionClass;
 
     private Repository\DataSource $dataSourceRepository;
     private Repository\Expression $expressionRepository;
     private Repository\Method $methodRepository;
-    private Repository\ReflectionClassRepository $reflectionClassRepository;
+    private Repository\ReflectionClass $reflectionClassRepository;
+    private MethodInvoker $methodInvoker;
 
     public function __construct(
         Repository\DataSource $dataSourceRepository,
         Repository\Expression $expressionRepository,
         Repository\Method $methodRepository,
-        Repository\ReflectionClassRepository $reflectionClassRepository
+        Repository\ReflectionClass $reflectionClassRepository,
+        MethodInvoker $methodInvoker
     ) {
         $this->dataSourceRepository = $dataSourceRepository;
         $this->expressionRepository = $expressionRepository;
         $this->methodRepository = $methodRepository;
         $this->reflectionClassRepository = $reflectionClassRepository;
+        $this->methodInvoker = $methodInvoker;
     }
 
-    public function setObject(object $object) : self
+    public function setClass(string $class) : self
     {
-        $this->object = $object;
+        $this->class = $class;
 
         return $this;
     }
@@ -65,11 +69,15 @@ class ModelBuilder
 
     public function build() : Model\Class_
     {
-        $classMetadata = new Model\Class_($this->object, $this->reflectionClassRepository);
-        $this->reflectionClass = $classMetadata->getReflectionClass();
-
         $arrayMetadata = $this->getValidatedConfig();
 
+        $classMetadata = new Model\Class_($this->class, $this->reflectionClassRepository);
+        $this->reflectionClass = $classMetadata->getReflectionClass();
+
+
+        if (isset($arrayMetadata['class'])) {
+            $classMetadata->setAccessorsToBypass($arrayMetadata['class']['accessors_to_bypass']);
+        }
 
         if (isset($arrayMetadata['data_sources']) &&  count($arrayMetadata['data_sources'])) {
             $dataSources = $this->buildDataSources($arrayMetadata['data_sources']);
@@ -111,7 +119,11 @@ class ModelBuilder
             $property = null;
 
             if (isset($arrayMetadata['properties'][$propertyName])) {
-                $property = $this->buildPropertyKind($propertyName, $arrayMetadata['properties'][$propertyName], $arrayMetadata['class'], $reflectionProperty);
+                $property = $this->buildPropertyKind(
+                    $propertyName,
+                    $arrayMetadata['properties'][$propertyName],
+                    $arrayMetadata['class'], $reflectionProperty
+                );
             } elseif (true === $arrayMetadata['class']['default_autoconfigure_properties']
                 && ! in_array($propertyName, $arrayMetadata['not_to_autoconfigure_properties'])) {
 
@@ -121,6 +133,8 @@ class ModelBuilder
                     $property = new Model\Property\CollectionType($propertyName);
                 }
 
+                $this->buildBaseProperty($property, [], [], $reflectionProperty);
+
                 $property->setKeyInRawData($this->resolveKeyInRawData(null, $propertyName, $arrayMetadata['class']));
             }
 
@@ -129,17 +143,8 @@ class ModelBuilder
             }
         }
 
-        //$this->resolveReferences();
-
         return $classMetadata;
     }
-
-    /*private function resolveReferences(Model\Class_ $classMetadata)
-    {
-        foreach ($classMetadata->getProperties() as $property) {
-            //if ()
-        }
-    }*/
 
     private function buildPropertyKind(string $propertyName, array $propertyData, array $classData, \ReflectionProperty $reflectionProperty)
     {
@@ -186,21 +191,19 @@ class ModelBuilder
 
         if (isset($classData['raw_data_key_style'])) {
             switch ($classData['raw_data_key_style']) {
-                case Model\RawDataKeyStyleEnum::RAW_DATA_KEY_STYLE_UNDERSCORE:
+                case Model\Enum\RawDataKeyStyle::UNDERSCORE:
                     return $this->camelCaseToUnderscoreCase($propertyName);
-                case Model\RawDataKeyStyleEnum::RAW_DATA_KEY_STYLE_DASH:
+                case Model\Enum\RawDataKeyStyle::DASH:
                     return $this->camelCaseToDashCase($propertyName);
-                case Model\RawDataKeyStyleEnum::RAW_DATA_KEY_STYLE_CAMEL_CASE:
+                case Model\Enum\RawDataKeyStyle::CAMEL_CASE:
                     return $propertyName;
-                /*case Model\RawDataKeyStyleEnum::RAW_DATA_KEY_STYLE_CUSTOM:
-                    if (null !== $classData['to_raw_data_key_style_converter']) {
-                        $property->setKeyInRawData(
-                            $this->methodInvoker->invokeMethod(
-                                $this->buildMethod($propertyName, $clgassData['to_raw_data_key_style_converter']),
-                                $propertyName
-                            )
+                case Model\Enum\RawDataKeyStyle::CUSTOM:
+                    if (null !== $classData['raw_data_key_style_converter']) {
+                        return $this->methodInvoker->invokeMethod(
+                            $this->buildMethod($classData['raw_data_key_style_converter']),
+                            [$propertyName]
                         );
-                    }*/
+                    }
             }
         }
 
@@ -221,12 +224,12 @@ class ModelBuilder
     {
         if (
             isset($classData['raw_data_key_style'])
-            && $classData['raw_data_key_style'] !== Model\RawDataKeyStyleEnum::RAW_DATA_KEY_STYLE_CUSTOM
-            && $this->isEnabled('to_raw_data_key_style_converter', $classData)
+            && $classData['raw_data_key_style'] !== Model\Enum\RawDataKeyStyle::CUSTOM
+            && $this->isEnabled('raw_data_key_style_converter', $classData)
         ) {
             throw new \LogicException(sprintf(
                 'Cannot build model of property "%s"' .
-                PHP_EOL . 'Given the attribute "raw_data_key_style" not custom but the attribute to customize "to_raw_data_key_style_converter" is set.',
+                PHP_EOL . 'Given the attribute "raw_data_key_style" not custom but the attribute to customize "raw_data_key_style_converter" is set.',
                 $property->getName()
             ));
         }
@@ -252,14 +255,15 @@ class ModelBuilder
         } else {
             $getter = $this->getterise($reflectionProperty->getName());
         }
-        $property->setGetter($getter);
+        if (null !== $getter) {
+            $property->setGetter($getter);
+        }
 
         if (isset($propertyData['setter'])) {
             $setter = $propertyData['setter'];
         } else {
             $setter = $this->setterise($reflectionProperty->getName());
         }
-
         if (null !== $setter) {
             $property->setSetter($setter);
         }
@@ -282,12 +286,24 @@ class ModelBuilder
             $property->setDiscriminator($this->expressionRepository->find($propertyData['discriminator_expression_ref']));
         }
 
+        if ($this->isEnabled('raw_data_location', $propertyData)) {
+            $property->setRawDataLocation($this->buildRawDataLocation($propertyData['raw_data_location']));
+        }
+
+        if ($this->isEnabled('instance_creation', $propertyData)) {
+            $property->setInstanceCreation($this->buildInstanceCreation($propertyData['instance_creation']));
+        }
+
         if (isset($propertyData['default_value'])) {
             $property->setDefaultValue($propertyData['default_value']);
         }
 
-        if ($this->hasCount('variables', $propertyData['variables'])) {
+        if ($this->hasCount('variables', $propertyData)) {
             $property->setVariables($propertyData['variables']);
+        }
+
+        if ($this->hasCount('dynamic_attributes', $propertyData)) {
+            $property->setDynamicAttributes($propertyData['dynamic_attributes']);
         }
 
         if ($this->isEnabled('callbacks_using_metadata', $propertyData)) {
@@ -305,8 +321,12 @@ class ModelBuilder
         return $property;
     }
 
-    private function buildBasicProperty(string $propertyName, array $propertyData, array $classData, \ReflectionProperty $reflectionProperty)
-    {
+    private function buildBasicProperty(
+        string $propertyName,
+        array $propertyData,
+        array $classData,
+        \ReflectionProperty $reflectionProperty
+    ) : Model\Property\SingleType {
         $property = new Model\Property\SingleType($propertyName);
 
         $property = $this->buildBaseProperty($property, $propertyData, $classData, $reflectionProperty);
@@ -325,7 +345,7 @@ class ModelBuilder
         return $property;
     }
 
-    private function buildCollectionProperty(string $propertyName, array $propertyData, array $classData, \ReflectionProperty $reflectionProperty)
+    private function buildCollectionProperty(string $propertyName, array $propertyData, array $classData, \ReflectionProperty $reflectionProperty) : Model\Property\CollectionType
     {
         $property = new Model\Property\CollectionType($propertyName);
 
@@ -350,9 +370,10 @@ class ModelBuilder
         }
 
 
+        $adder = null;
         if (isset($propertyData['adder'])) {
             $adder = $propertyData['adder'];
-        } else {
+        } elseif (isset($classData['default_adder_name_format'])) {
             $adder = $this->adderise($reflectionProperty->getName(), $classData['default_adder_name_format']);
         }
         if (null !== $adder) {
@@ -362,8 +383,12 @@ class ModelBuilder
         return $property;
     }
 
-    private function buildCandidatesProperty(string $propertyName, array $propertyCandidatesData, array $classData, \ReflectionProperty $reflectionProperty)
-    {
+    private function buildCandidatesProperty(
+        string $propertyName,
+        array $propertyCandidatesData,
+        array $classData,
+        \ReflectionProperty $reflectionProperty
+    ) : Model\Property {
         $propertyCandidates = new Model\Property\Candidates($propertyName);
 
         foreach ($propertyCandidatesData['candidates'] as $propertyCandidateData) {
@@ -373,7 +398,7 @@ class ModelBuilder
         return $propertyCandidates;
     }
 
-    private function buildDefaultProperty(string $propertyName, \ReflectionProperty $reflectionProperty)
+    private function buildDefaultProperty(string $propertyName, \ReflectionProperty $reflectionProperty) : Model\Property\Leaf
     {
         if ('array' !== $reflectionProperty->getType()->getName()) {//check doc comment too, and type like MyClass[]
             $property = new Model\Property\SingleType($propertyName);
@@ -384,7 +409,7 @@ class ModelBuilder
         return $property;
     }
 
-    private function buildItemsClassCandidate(array $itemClassCandidatesData)
+    private function buildItemsClassCandidate(array $itemClassCandidatesData) : array
     {
         $itemClassCandidates = [];
 
@@ -395,9 +420,17 @@ class ModelBuilder
         return $itemClassCandidates;
     }
 
-    private function buildItemClassCandidate(array $itemClassCandidateData)
+    private function buildItemClassCandidate(array $itemClassCandidateData) : Model\ItemClassCandidate
     {
         $itemClassCandidate = new Model\ItemClassCandidate($itemClassCandidateData['class']);
+
+        if ($this->isEnabled('raw_data_location', $itemClassCandidateData)) {
+            $itemClassCandidate->setRawDataLocation($this->buildRawDataLocation($itemClassCandidateData['raw_data_location']));
+        }
+
+        if ($this->isEnabled('instance_creation', $itemClassCandidateData)) {
+            $itemClassCandidate->setInstanceCreation($this->buildInstanceCreation($itemClassCandidateData['instance_creation']));
+        }
 
         if (isset($itemClassCandidateData['discriminator_expression'])) {
             $discriminator = $this->buildExpression($itemClassCandidateData['discriminator_expression']);
@@ -424,7 +457,7 @@ class ModelBuilder
         }
     }
 
-    private function buildDataSources(array $dataSourcesData)
+    private function buildDataSources(array $dataSourcesData) : array
     {
         $dataSources = [];
 
@@ -435,7 +468,7 @@ class ModelBuilder
         return $dataSources;
     }
 
-    private function buildDataSource(array $dataSourceData)
+    private function buildDataSource(array $dataSourceData) : Model\DataSource
     {
         $dataSource = new Model\DataSource($dataSourceData['id']);
 
@@ -493,7 +526,7 @@ class ModelBuilder
         return $callbacks;
     }
 
-    private function buildMethods(array $methodsData)
+    private function buildMethods(array $methodsData) : array
     {
         $methods = [];
 
@@ -504,12 +537,21 @@ class ModelBuilder
         return $methods;
     }
 
-    private function buildMethod(array $methodData)
+    private function buildMethod(array $methodData) : Model\Method
     {
         $method = new Model\Method($methodData['id']);
 
         if (isset($methodData['class'])) {
             $method->setClass($methodData['class']);
+
+            $class = $methodData['class'];
+            if ($class === $this->reflectionClass->getName()) {
+                $static = $this->reflectionClass->getMethod($methodData['name'])->isStatic();
+            } else {
+                $reflectionClass = new \ReflectionClass($class);
+                $static = $reflectionClass->getMethod($methodData['name'])->isStatic();
+            }
+            $method->setStatic($static);
         } elseif (isset($methodData['service_key'])) {
             $method->setServiceKey($methodData['service_key']);
         }
@@ -534,7 +576,7 @@ class ModelBuilder
         return $method;
     }
 
-    private function buildExpressions(array $expressionsData)
+    private function buildExpressions(array $expressionsData) : array
     {
         $expressions = [];
 
@@ -551,6 +593,86 @@ class ModelBuilder
         $expression->setValue($expressionData['value']);
 
         return $expression;
+    }
+
+    private function buildRawDataLocation(array $rawDataLocationData) : Model\RawDataLocation
+    {
+        $rawDataLocation = new Model\RawDataLocation($rawDataLocationData['location_name']);
+
+        $mappingTechnics = [];
+
+        if ($this->isEnabled('keys_mapping_method', $rawDataLocationData)) {
+            $mappingTechnics['keys_mapping_method'];
+            $rawDataLocation->setKeysMapping(
+                new Model\KeysMapping\Method($this->buildMethod($rawDataLocationData['keys_mapping_method']))
+            );
+        }
+
+        if ($this->hasCount('keys_mapping_values', $rawDataLocationData)) {
+            $mappingTechnics['keys_mapping_values'];
+            if (count($mappingTechnics) > 1) {
+                throw new \LogicException(sprintf(
+                    'Cannot interpret properly raw_data_location configuration.'
+                    . PHP_EOL . 'You must provide only one technic of mapping parent data among "values", "prefix" and "method".'
+                    . PHP_EOL . 'Given several technics [%s].',
+                    implode(',', $mappingTechnics)
+                ));
+            }
+            $rawDataLocation->setKeysMapping(
+                new Model\KeysMapping\Values($rawDataLocationData['keys_mapping_values'])
+            );
+        }
+
+        if (isset($rawDataLocationData['keys_mapping_prefix'])) {
+            $mappingTechnics['keys_mapping_prefix'];
+            if (count($mappingTechnics) > 1) {
+                throw new \LogicException(sprintf(
+                    'Cannot interpret properly raw_data_location configuration.'
+                    . PHP_EOL . 'You must provide only one technic of mapping parent data among "values", "prefix" and "method".'
+                    . PHP_EOL . 'Given several technics [%s].',
+                    implode(',', $mappingTechnics)
+                ));
+            }
+
+            $rawDataLocation->setKeysMapping(
+                new Model\KeysMapping\Prefix($rawDataLocationData['keys_mapping_prefix'])
+            );
+        }
+
+        return $rawDataLocation;
+    }
+
+    private function buildInstanceCreation(array $instanceCreationData) : Model\InstanceCreation
+    {
+        $instanceCreation = new Model\InstanceCreation();
+
+        if (isset($instanceCreationData['factory_method_name'])) {
+            $instanceCreation->setFactoryMethodName($instanceCreationData['factory_method_name']);
+        } elseif ($this->isEnabled('factory_method', $instanceCreationData)) {
+            $instanceCreation->setFactoryMethod($this->buildMethod($instanceCreationData['factory_method']));
+        }
+
+        if (isset($instanceCreationData['set_properties_through_creation_method_when_possible'])) {
+            $instanceCreation->setSetPropertiesThroughCreationMethodWhenPossible(
+                $instanceCreationData['set_properties_through_creation_method_when_possible']
+            );
+        }
+
+        if (isset($instanceCreationData['always_access_properties_directly'])) {
+            $instanceCreation->setAlwaysAccessPropertiesDirectly($instanceCreationData['always_access_properties_directly']);
+        }
+
+        if ($this->isEnabled('after_creation_methods', $instanceCreationData)) {
+            $methods = $this->buildMethods($instanceCreationData['after_creation_methods']);
+
+            foreach ($methods as $method) {
+                $instanceCreation->addAfterCreationMethod($method);
+            }
+        } elseif ($this->isEnabled('after_creation_method', $instanceCreationData)) {
+            $instanceCreation->addAfterCreationMethod($this->buildMethod($arrayMetadata['after_creation_method']));
+        }
+
+        return $instanceCreation;
     }
 
     private function getterise(string $propertyName) : ?string
@@ -610,6 +732,6 @@ class ModelBuilder
                 lcfirst($match);
         }
 
-        return implode('_', $ret);
+        return implode($separator, $ret);
     }
 }

@@ -1,8 +1,8 @@
 <?php
 
-namespace Big\Hydrator\ClassMetaData\Repository;
+namespace Kassko\ObjectHydrator\ClassMetaData\Repository;
 
-use Big\Hydrator\ClassMetadata\Model;
+use Kassko\ObjectHydrator\ClassMetadata\Model;
 
 /**
  * @author kko
