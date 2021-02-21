@@ -1,13 +1,21 @@
 <?php
 
-namespace Kassko\ObjectHydratorTest\Integration;
+namespace Kassko\ObjectHydratorIntegrationTest;
 
 use Kassko\ObjectHydrator\{Annotation\Doctrine as BHY, HydratorBuilder};
-use Kassko\ObjectHydratorTest\Integration\Fixture\Model\Address\AddressWithFactoryMethod;
+use Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Address\AddressWithFactoryMethod;
+use Kassko\ObjectHydratorIntegrationTest\Helper;
 use PHPUnit\Framework\TestCase;
 
 class _017_HydratePropertyValueObject_FactoryMethod_Test extends TestCase
 {
+    use Helper\IntegrationTestTrait;
+
+    public function setup() : void
+    {
+        $this->initHydrator();
+    }
+
     /**
      * @test
      */
@@ -35,7 +43,7 @@ class _017_HydratePropertyValueObject_FactoryMethod_Test extends TestCase
             private ?string $lastName = null;
             /**
              * @BHY\PropertyConfig\SingleType(
-             *      class="\Kassko\ObjectHydratorTest\Integration\Fixture\Model\Address\AddressWithFactoryMethod",
+             *      class="\Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Address\AddressWithFactoryMethod",
              *      instanceCreation=@BHY\InstanceCreation(
              *          factoryMethodName="from",
              *          setPropertiesThroughCreationMethodWhenPossible=true
@@ -45,7 +53,7 @@ class _017_HydratePropertyValueObject_FactoryMethod_Test extends TestCase
             private ?AddressWithFactoryMethod $billingAddress = null;
             /**
              * @BHY\PropertyConfig\SingleType(
-             *      class="\Kassko\ObjectHydratorTest\Integration\Fixture\Model\Address\AddressWithFactoryMethod",
+             *      class="\Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Address\AddressWithFactoryMethod",
              *      instanceCreation=@BHY\InstanceCreation(
              *          factoryMethodName="from",
              *          setPropertiesThroughCreationMethodWhenPossible=true
@@ -71,8 +79,8 @@ class _017_HydratePropertyValueObject_FactoryMethod_Test extends TestCase
             public function setDeliveryAddress(AddressWithFactoryMethod $deliveryAddress) { $this->deliveryAddress = $deliveryAddress; }
         };
 
-        $hydrator = (new HydratorBuilder())->build();
-        $hydrator->hydrate($person, $rawData);
+
+        $this->hydrator->hydrate($person, $rawData);
 
         $this->assertSame(1, $person->getId());
         $this->assertSame('Dany', $person->getFirstName());

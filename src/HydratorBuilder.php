@@ -2,7 +2,6 @@
 
 namespace Kassko\ObjectHydrator;
 
-use Kassko\ObjectHydrator\ConfigurationProcessor;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 
@@ -10,25 +9,48 @@ use function class_exists;
 
 class HydratorBuilder
 {
-    private array $configs = [];
+    protected array $configs = [];
 
     public function build() : \Kassko\ObjectHydrator\Hydrator
     {
-        $config = new \Kassko\ObjectHydrator\Config((new ConfigurationProcessor)->processConfig($this->configs));
+        $config = new \Kassko\ObjectHydrator\Config\Config(
+            (new \Kassko\ObjectHydrator\Config\ConfigurationProcessor)->processConfig($this->configs)
+        );
         $configValues = $config->getValues();
 
-        $reflectionClassRepository = new \Kassko\ObjectHydrator\ClassMetadata\Repository\ReflectionClass;
+        $reflectionClassRepository = new \Kassko\ObjectHydrator\Model\Repository\ReflectionClass;
 
-        $classMetadataLoader = new \Kassko\ObjectHydrator\ClassMetadataLoader(
-            (new \Kassko\ObjectHydrator\LoaderResolver)->addLoader(
-                (
-                    new \Kassko\ObjectHydrator\ClassMetadataLoader\DoctrineAnnotationLoader(
-                        new \Doctrine\Common\Annotations\AnnotationReader
-                    )
-                )->setConfig(
-                    new \Kassko\ObjectHydrator\ClassMetadataConfig($config['class_metadata'])
-                )->setReflectionClassRepository($reflectionClassRepository)
-            )
+        $leafLoaderConfigurator = new \Kassko\ObjectHydrator\ClassMetadata\Loader\LeafLoaderConfigurator(
+            new \Kassko\ObjectHydrator\ClassMetadata\Loader\ClassMetadataConfig($config['class_metadata']),
+            $reflectionClassRepository
+        );
+
+        $loaders = [];
+
+        $loader = new \Kassko\ObjectHydrator\ClassMetadata\Loader\Leaf\DoctrineAnnotationLoader(
+            new \Doctrine\Common\Annotations\AnnotationReader
+        );
+        $leafLoaderConfigurator->configure($loader);
+        $loaders[] = $loader;
+
+        $loader = new \Kassko\ObjectHydrator\ClassMetadata\Loader\Leaf\InnerPhpLoader;
+        $leafLoaderConfigurator->configure($loader);
+        $loaders[] = $loader;
+
+        $loader = new \Kassko\ObjectHydrator\ClassMetadata\Loader\Leaf\InnerYamlLoader;
+        $leafLoaderConfigurator->configure($loader);
+        $loaders[] = $loader;
+
+        $loader = new \Kassko\ObjectHydrator\ClassMetadata\Loader\Leaf\PhpFileLoader;
+        $leafLoaderConfigurator->configure($loader);
+        $loaders[] = $loader;
+
+        $loader = new \Kassko\ObjectHydrator\ClassMetadata\Loader\Leaf\YamlFileLoader;
+        $leafLoaderConfigurator->configure($loader);
+        $loaders[] = $loader;
+
+        $classMetadataLoader = new \Kassko\ObjectHydrator\ClassMetadata\Loader\ClassMetadataLoader(
+            new \Kassko\ObjectHydrator\ClassMetadata\Loader\LoaderResolver($loaders)
         );
 
         $expressionContext = new \Kassko\ObjectHydrator\ExpressionContext;
@@ -44,20 +66,22 @@ class HydratorBuilder
             $methodInvoker->setServiceLocator($config['service_locator']);
         }
 
-        $modelBuilder = new \Kassko\ObjectHydrator\ModelBuilder(
-            new \Kassko\ObjectHydrator\ClassMetadata\Repository\DataSource,
-            new \Kassko\ObjectHydrator\ClassMetadata\Repository\Expression,
-            new \Kassko\ObjectHydrator\ClassMetadata\Repository\Method,
+        $modelBuilder = new \Kassko\ObjectHydrator\ClassMetadata\Loader\ModelBuilder(
+            new \Kassko\ObjectHydrator\Model\Repository\DataSource,
+            new \Kassko\ObjectHydrator\Model\Repository\Expression,
+            new \Kassko\ObjectHydrator\Model\Repository\Method,
             $reflectionClassRepository,
             $methodInvoker
         );
 
-        $modelLoader = new \Kassko\ObjectHydrator\ModelLoader(
+        $modelLoader = new \Kassko\ObjectHydrator\ClassMetadata\Loader\ModelLoader(
             $classMetadataLoader,
             $modelBuilder
         );
 
-        $dataFetcher = new \Kassko\ObjectHydrator\DataFetcher($methodInvoker);
+        $hydratorProcessingObserverManager = new \Kassko\ObjectHydrator\Observer\HydratorProcessingObserverManager($methodInvoker);
+
+        $dataFetcher = new \Kassko\ObjectHydrator\DataFetcher($methodInvoker, $hydratorProcessingObserverManager);
 
         $propertyCandidatesResolver = new \Kassko\ObjectHydrator\PropertyCandidatesResolver($expressionEvaluator, $methodInvoker);
 
@@ -79,7 +103,8 @@ class HydratorBuilder
                 $configValues['service_locator'] ? $config['service_locator'] : null
             ))->setPropertyCandidatesResolver($propertyCandidatesResolver),
             $expressionEvaluator,
-            $config
+            $config,
+            $hydratorProcessingObserverManager
         ))->setPropertyCandidatesResolver($propertyCandidatesResolver);
 
         $logger = isset($config['logger_key']) ? ($config['service_locator'])($config['logger_key']) : null;
@@ -104,10 +129,10 @@ class HydratorBuilder
 
     private function initializeRegistry(Hydrator $hydrator, ?LoggerInterface $logger) : void
     {
-        Registry::getInstance()[Registry::KEY_LOGGER] = $logger ?? new \Psr\Log\NullLogger;
-
-        $propertyLoader = new PropertyLoader($hydrator);
-        Registry::getInstance()[Registry::KEY_PROPERTY_LOADER] = $propertyLoader;
+        (new RegistryInitializer)->initialize(
+            $hydrator,
+            $logger ?? new \Psr\Log\NullLogger
+        );
     }
 }
 

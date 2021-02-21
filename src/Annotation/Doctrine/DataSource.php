@@ -2,7 +2,7 @@
 
 namespace Kassko\ObjectHydrator\Annotation\Doctrine;
 
-use Kassko\ObjectHydrator\ClassMetadata\Model\Enum;
+use Kassko\ObjectHydrator\Model\Enum;
 
 /**
  * @Annotation
@@ -59,14 +59,4 @@ final class DataSource
      * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Callbacks
      */
     public ?Callbacks $callbacksFetchingData = null;
-    /**
-     * @internal
-     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Callbacks
-     */
-    public ?Callbacks $callbacksHydration = null;
-    /**
-     * @internal
-     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Callbacks
-     */
-    public ?Callbacks $callbacksAssigningHydratedValue = null;
 }

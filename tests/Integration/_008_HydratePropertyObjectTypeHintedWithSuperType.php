@@ -1,13 +1,21 @@
 <?php
 
-namespace Kassko\ObjectHydratorTest\Integration;
+namespace Kassko\ObjectHydratorIntegrationTest;
 
 use Kassko\ObjectHydrator\{Annotation\Doctrine as BHY, HydratorBuilder};
-use Kassko\ObjectHydratorTest\Integration\Fixture;
+use Kassko\ObjectHydratorIntegrationTest\Fixture;
+use Kassko\ObjectHydratorIntegrationTest\Helper;
 use PHPUnit\Framework\TestCase;
 
 class _008_HydratePropertyObjectTypeHintedWithSuperType extends TestCase
 {
+    use Helper\IntegrationTestTrait;
+
+    public function setup() : void
+    {
+        $this->initHydrator();
+    }
+
     /**
      * @test
      */
@@ -24,8 +32,8 @@ class _008_HydratePropertyObjectTypeHintedWithSuperType extends TestCase
 
         $garage = new Fixture\Model\Car\Garage;
 
-        $hydrator = (new HydratorBuilder())->build();
-        $hydrator->hydrate($garage, $primaryData);
+
+        $this->hydrator->hydrate($garage, $primaryData);
 
         $this->assertSame(1, $garage->getId());
         $this->assertNotNull($garage->getCar());
@@ -50,8 +58,8 @@ class _008_HydratePropertyObjectTypeHintedWithSuperType extends TestCase
 
         $garage = new Fixture\Model\Car\Garage;
 
-        $hydrator = (new HydratorBuilder())->build();
-        $hydrator->hydrate($garage, $primaryData);
+
+        $this->hydrator->hydrate($garage, $primaryData);
 
         $this->assertSame(1, $garage->getId());
         $this->assertNotNull($garage->getCar());

@@ -19,7 +19,9 @@
         "doctrine/annotations": "^1.10.4",
         "fzaninotto/faker": "^1.9.1",
         "phpunit/phpunit":"^9.4",
-        "symfony/expression-language": "^3.4|^4.0|^5.0"
+        "symfony/dependency-injection": "^3.4|^4.0|^5.0",
+        "symfony/expression-language": "^3.4|^4.0|^5.0",
+        "symfony/yaml": "^3.4|^4.0|^5.0"
     },
     "suggest": {
         "doctrine/annotations": "Allows to keep compatibility with doctrine annotations for php 7 environment",
@@ -31,7 +33,7 @@
     "autoload": {
         "psr-4": {
             "Kassko\\ObjectHydrator\\": "src",
-            "Kassko\\ObjectHydrator\\FrameworkBridge\\Symfony\\": "framework-bridge/symfony/src"
+            "Kassko\\FrameworkBridge\\Symfony\\ObjectHydrator\\": "framework-bridge/symfony/src"
         }
     },
     "config": {

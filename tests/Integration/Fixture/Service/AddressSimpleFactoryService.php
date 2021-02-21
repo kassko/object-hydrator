@@ -1,7 +1,7 @@
 <?php
-namespace Kassko\ObjectHydratorTest\Integration\Fixture\Service;
+namespace Kassko\ObjectHydratorIntegrationTest\Fixture\Service;
 
-use Kassko\ObjectHydratorTest\Integration\Fixture\Model\Address\AddressSimple;
+use Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Address\AddressSimple;
 
 class AddressSimpleFactoryService
 {

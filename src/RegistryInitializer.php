@@ -2,9 +2,11 @@
 
 namespace Kassko\ObjectHydrator;
 
+use Psr\Log\LoggerInterface;
+
 class RegistryInitializer
 {
-    public function initialize(Hydrator $hydrator, ?LoggerInterface $logger) : void
+    public function initialize(Hydrator $hydrator, ?LoggerInterface $logger = null) : void
     {
         Registry::getInstance()[Registry::KEY_LOGGER] = $logger ?? new \Psr\Log\NullLogger;
 
@@ -14,6 +16,6 @@ class RegistryInitializer
 
     public function clear()
     {
-        Registry::getInstance()->clear()
+        Registry::getInstance()->clear();
     }
 }

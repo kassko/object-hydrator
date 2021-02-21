@@ -1,5 +1,5 @@
 <?php
-namespace Kassko\ObjectHydratorTest\Integration\Fixture\Service;
+namespace Kassko\ObjectHydratorIntegrationTest\Fixture\Service;
 
 class PropertyToKeyStyleMapper
 {

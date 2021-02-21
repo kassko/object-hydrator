@@ -1,6 +1,6 @@
 <?php
 
-namespace Kassko\ObjectHydratorTest\Integration\Fixture\Model\Car;
+namespace Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Car;
 
 use Kassko\ObjectHydrator\Annotation\Doctrine as BHY;
 

@@ -1,6 +1,5 @@
 <?php
-
-namespace Kassko\ObjectHydrator\FrameworkBridge\Symfony;
+namespace Kassko\FrameworkBridge\Symfony\ObjectHydrator;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
@@ -12,7 +11,10 @@ final class KasskoObjectHydratorBundle extends Bundle
     public function boot()
     {
         $registryInitialiser = $this->container->get('Kassko\ObjectHydrator\RegistryInitializer');
-        $registryInitialiser->initialize();
+        $registryInitialiser->initialize(
+            $this->container->get('Kassko\ObjectHydrator\Hydrator'),
+            $this->container->has('logger') ? $this->container->get('logger') : null
+        );
     }
 
     /**

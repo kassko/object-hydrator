@@ -1,13 +1,21 @@
 <?php
 
-namespace Kassko\ObjectHydratorTest\Integration;
+namespace Kassko\ObjectHydratorIntegrationTest;
 
 use Kassko\ObjectHydrator\{Annotation\Doctrine as BHY, HydratorBuilder};
-use Kassko\ObjectHydratorTest\Integration\Fixture;
+use Kassko\ObjectHydratorIntegrationTest\Fixture;
+use Kassko\ObjectHydratorIntegrationTest\Helper;
 use PHPUnit\Framework\TestCase;
 
 class _006_HydratePropertyOfParentClassAndInheritThisParentClassConfiguration extends TestCase
 {
+    use Helper\IntegrationTestTrait;
+
+    public function setup() : void
+    {
+        $this->initHydrator();
+    }
+
     /**
      * @test
      */
@@ -21,8 +29,8 @@ class _006_HydratePropertyOfParentClassAndInheritThisParentClassConfiguration ex
 
         $car = new Fixture\Model\Car\ElectricCar(1);
 
-        $hydrator = (new HydratorBuilder())->build();
-        $hydrator->hydrate($car, $primaryData);
+
+        $this->hydrator->hydrate($car, $primaryData);
 
         $this->assertSame(1, $car->getId());
         $this->assertSame('fiesta', $car->getBrand());

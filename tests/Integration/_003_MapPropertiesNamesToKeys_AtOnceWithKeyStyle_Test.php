@@ -1,12 +1,20 @@
 <?php
 
-namespace Kassko\ObjectHydratorTest\Integration;
+namespace Kassko\ObjectHydratorIntegrationTest;
 
 use Kassko\ObjectHydrator\{Annotation\Doctrine as BHY, HydratorBuilder};
+use Kassko\ObjectHydratorIntegrationTest\Helper;
 use PHPUnit\Framework\TestCase;
 
 class _003_MapPropertiesNamesToKeys_AtOnceWithKeyStyle_Test extends TestCase
 {
+    use Helper\IntegrationTestTrait;
+
+    public function setup() : void
+    {
+        $this->initHydrator();
+    }
+
     /**
      * @test
      */
@@ -41,8 +49,8 @@ class _003_MapPropertiesNamesToKeys_AtOnceWithKeyStyle_Test extends TestCase
             public function setEmail(string $email) { $this->email = $email; }
         };
 
-        $hydrator = (new HydratorBuilder())->build();
-        $hydrator->hydrate($person, $rawData);
+
+        $this->hydrator->hydrate($person, $rawData);
 
         $this->assertSame(1, $person->getId());
         $this->assertSame('Dany', $person->getFirstName());
@@ -84,8 +92,8 @@ class _003_MapPropertiesNamesToKeys_AtOnceWithKeyStyle_Test extends TestCase
             public function setEmail(string $email) { $this->email = $email; }
         };
 
-        $hydrator = (new HydratorBuilder())->build();
-        $hydrator->hydrate($person, $rawData);
+
+        $this->hydrator->hydrate($person, $rawData);
 
         $this->assertSame(1, $person->getId());
         $this->assertSame('Dany', $person->getFirstName());
@@ -127,8 +135,8 @@ class _003_MapPropertiesNamesToKeys_AtOnceWithKeyStyle_Test extends TestCase
             public function setEmail(string $email) { $this->email = $email; }
         };
 
-        $hydrator = (new HydratorBuilder())->build();
-        $hydrator->hydrate($person, $rawData);
+
+        $this->hydrator->hydrate($person, $rawData);
 
         $this->assertSame(1, $person->getId());
         $this->assertSame('Dany', $person->getFirstName());
@@ -148,10 +156,10 @@ class _003_MapPropertiesNamesToKeys_AtOnceWithKeyStyle_Test extends TestCase
         ];
 
 
-        $person = new \Kassko\ObjectHydratorTest\Integration\Fixture\Model\Person\PersonRawDataKeyStyleConverter(1);
+        $person = new \Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Person\PersonRawDataKeyStyleConverter(1);
 
-        $hydrator = (new HydratorBuilder())->build();
-        $hydrator->hydrate($person, $rawData);
+
+        $this->hydrator->hydrate($person, $rawData);
 
         $this->assertSame(1, $person->getId());
         $this->assertSame('Dany', $person->getFirstName());
@@ -174,7 +182,7 @@ class _003_MapPropertiesNamesToKeys_AtOnceWithKeyStyle_Test extends TestCase
          * @BHY\ClassConfig(
          *      rawDataKeyStyle="custom",
          *      rawDataKeyStyleConverter=@BHY\Method(
-         *          class="Kassko\ObjectHydratorTest\Integration\Fixture\Service\PropertyToKeyStyleMapper",
+         *          class="Kassko\ObjectHydratorIntegrationTest\Fixture\Service\PropertyToKeyStyleMapper",
          *          name="mapPropertyNameToKey"
          *      )
          * )
@@ -199,8 +207,8 @@ class _003_MapPropertiesNamesToKeys_AtOnceWithKeyStyle_Test extends TestCase
             public function setEmail(string $email) { $this->email = $email; }
         };
 
-        $hydrator = (new HydratorBuilder())->build();
-        $hydrator->hydrate($person, $rawData);
+
+        $this->hydrator->hydrate($person, $rawData);
 
         $this->assertSame(1, $person->getId());
         $this->assertSame('Dany', $person->getFirstName());

@@ -3,6 +3,7 @@
 namespace Kassko\ObjectHydrator;
 
 use Kassko\ObjectHydrator\ClassMetadata;
+use Kassko\ObjectHydrator\Config\Config;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 
 use function get_class;
@@ -20,8 +21,11 @@ class ExpressionEvaluator
     private ?ExpressionLanguage $expressionLanguage;
 
 
-    public function __construct(ExpressionContext $expressionContext, Config $expressionConfig, ?ExpressionLanguage $expressionLanguage = null)
-    {
+    public function __construct(
+        ExpressionContext $expressionContext,
+        Config $expressionConfig,
+        ?ExpressionLanguage $expressionLanguage = null
+    ) {
         $this->expressionContext = $expressionContext;
         $this->expressionConfig = $expressionConfig;
         $this->expressionLanguage = $expressionLanguage;
@@ -46,7 +50,7 @@ class ExpressionEvaluator
     public function resolveExpressions(array $args) : array
     {
         foreach ($args as &$arg) {
-            if ($arg instanceof ClassMetadata\Model\Expression) {
+            if ($arg instanceof Model\Expression) {
                 $arg = $this->resolveAdvancedExpression($arg);
             } else {
                 $arg = $this->resolveExpression($arg);
@@ -118,7 +122,7 @@ class ExpressionEvaluator
 
     public function resolveAdvancedExpression($arg)
     {
-        if (! $arg instanceof ClassMetadata\Model\Expression) {
+        if (! $arg instanceof Model\Expression) {
             throw new \Exception(sprintf(
                 'Cannot resolve an expression in metadata of class "%s".'
                 . PHP_EOL . 'An instance of %s was expected but got "%s"',

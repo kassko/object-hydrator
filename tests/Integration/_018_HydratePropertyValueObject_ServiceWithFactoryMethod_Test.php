@@ -1,13 +1,21 @@
 <?php
 
-namespace Kassko\ObjectHydratorTest\Integration;
+namespace Kassko\ObjectHydratorIntegrationTest;
 
 use Kassko\ObjectHydrator\{Annotation\Doctrine as BHY, HydratorBuilder};
-use Kassko\ObjectHydratorTest\Integration\Fixture\Model\Address;
+use Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Address;
+use Kassko\ObjectHydratorIntegrationTest\Helper;
 use PHPUnit\Framework\TestCase;
 
 class _018_HydratePropertyValueObject_ServiceWithFactoryMethod_Test extends TestCase
 {
+    use Helper\IntegrationTestTrait;
+
+    public function setup() : void
+    {
+        $this->initHydrator();
+    }
+
     /**
      * @test
      */
@@ -35,10 +43,10 @@ class _018_HydratePropertyValueObject_ServiceWithFactoryMethod_Test extends Test
             private ?string $lastName = null;
             /**
              * @BHY\PropertyConfig\SingleType(
-             *      class="\Kassko\ObjectHydratorTest\Integration\Fixture\Model\Address\AddressSimple",
+             *      class="\Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Address\AddressSimple",
              *      instanceCreation=@BHY\InstanceCreation(
              *          factoryMethod=@BHY\Method(
-             *              class="Kassko\ObjectHydratorTest\Integration\Fixture\Service\AddressSimpleFactoryService",
+             *              class="Kassko\ObjectHydratorIntegrationTest\Fixture\Service\AddressSimpleFactoryService",
              *              name="create"
              *          ),
              *          setPropertiesThroughCreationMethodWhenPossible=true
@@ -48,7 +56,7 @@ class _018_HydratePropertyValueObject_ServiceWithFactoryMethod_Test extends Test
             private ?Address\AddressSimple $billingAddress = null;
             /**
              * @BHY\PropertyConfig\SingleType(
-             *      class="\Kassko\ObjectHydratorTest\Integration\Fixture\Model\Address\AddressWithFactoryMethod",
+             *      class="\Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Address\AddressWithFactoryMethod",
              *      instanceCreation=@BHY\InstanceCreation(
              *          factoryMethodName="from",
              *          setPropertiesThroughCreationMethodWhenPossible=true
@@ -74,8 +82,8 @@ class _018_HydratePropertyValueObject_ServiceWithFactoryMethod_Test extends Test
             public function setDeliveryAddress(Address\AddressWithFactoryMethod $deliveryAddress) { $this->deliveryAddress = $deliveryAddress; }
         };
 
-        $hydrator = (new HydratorBuilder())->build();
-        $hydrator->hydrate($person, $rawData);
+
+        $this->hydrator->hydrate($person, $rawData);
 
         $this->assertSame(1, $person->getId());
         $this->assertSame('Dany', $person->getFirstName());

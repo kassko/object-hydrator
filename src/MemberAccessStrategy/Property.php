@@ -3,6 +3,7 @@
 namespace Kassko\ObjectHydrator\MemberAccessStrategy;
 
 use Kassko\ObjectHydrator\ClassMetadata;
+use Kassko\ObjectHydrator\Model;
 use Kassko\ObjectHydrator\MemberAccessStrategy\Exception\NotFoundMemberException;
 
 /**
@@ -15,18 +16,18 @@ class Property implements \Kassko\ObjectHydrator\MemberAccessStrategyInterface
     private $object;
     private $reflectionClass;
 
-    public function __construct(object $object, ClassMetadata\Model\Class_ $classMetadata)
+    public function __construct(object $object, Model\Class_ $classMetadata)
     {
         $this->object = $object;
         $this->reflectionClass = $classMetadata->getReflectionClass();
     }
 
-    public function getValue(ClassMetadata\Model\Property\Leaf $property)
+    public function getValue(Model\Property\Leaf $property)
     {
         return $this->doGetValue($property->getName());
     }
 
-    public function setValue($value, ClassMetadata\Model\Property\Leaf $property) : void
+    public function setValue($value, Model\Property\Leaf $property) : void
     {
         $propertyName = $property->getName();
         if (! isset($propertyName)) {

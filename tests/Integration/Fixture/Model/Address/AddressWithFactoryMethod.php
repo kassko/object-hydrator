@@ -1,6 +1,6 @@
 <?php
 
-namespace Kassko\ObjectHydratorTest\Integration\Fixture\Model\Address;
+namespace Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Address;
 
 use Kassko\ObjectHydrator\Annotation\Doctrine as BHY;
 

@@ -3,7 +3,9 @@
 namespace Kassko\ObjectHydrator;
 
 use Kassko\ObjectHydrator\ClassMetadata;
-use Kassko\ObjectHydrator\ClassMetadata\Model\Enum;
+use Kassko\ObjectHydrator\Config\Config;
+use Kassko\ObjectHydrator\Observer;
+use Kassko\ObjectHydrator\Model\Enum;
 
 use function array_filter;
 
@@ -11,7 +13,7 @@ class Hydrator
 {
     use PropertyCandidatesResolverAwareTrait;
 
-    private ModelLoader $modelLoader;
+    private ModelLoaderInterface $modelLoader;
     private MemberAccessStrategyFactory $memberAccessStrategyFactory;
     private IdentityMap $identityMap;
     private ObjectLoadabilityChecker $objectLoadabilityChecker;
@@ -21,9 +23,10 @@ class Hydrator
     private EssentialDataProvider $essentialDataProvider;
     private ExpressionEvaluator $expressionEvaluator;
     private Config $config;
+    private Observer\HydratorProcessingObserverManager $hydratorProcessingObserverManager;
 
     public function __construct(
-        ModelLoader $modelLoader,
+        ModelLoaderInterface $modelLoader,
         MemberAccessStrategyFactory $memberAccessStrategyFactory,
         IdentityMap $identityMap,
         ObjectLoadabilityChecker $objectLoadabilityChecker,
@@ -32,7 +35,8 @@ class Hydrator
         ExpressionContext $expressionContext,
         EssentialDataProvider $essentialDataProvider,
         ExpressionEvaluator $expressionEvaluator,
-        Config $config
+        Config $config,
+        Observer\HydratorProcessingObserverManager $hydratorProcessingObserverManager
     ) {
         $this->modelLoader = $modelLoader;
         $this->memberAccessStrategyFactory = $memberAccessStrategyFactory;
@@ -44,13 +48,23 @@ class Hydrator
         $this->essentialDataProvider = $essentialDataProvider;
         $this->expressionEvaluator = $expressionEvaluator;
         $this->config = $config;
+        $this->hydratorProcessingObserverManager = $hydratorProcessingObserverManager;
     }
 
     public function load(object $object) : void
     {
         $this->objectLoadabilityChecker->checkIfIsLoadable($object);
 
-        $this->hydrateLoadableProperties($object, [], $this->modelLoader->load(get_class($object)), true);
+        $this->hydrateLoadableProperties($object, [], $this->modelLoader->load(get_class($object)), $this->getClassNameUsedInConfig($object), true);
+    }
+
+    public function getClassNameUsedInConfig(object $object) : string
+    {
+        if (\method_exists($object, 'providePrettyClassName')) {
+            return $object::{'providePrettyClassName'}();
+        }
+
+        return \get_class($object);
     }
 
     public function loadProperty(object $object, string $propertyName) : void
@@ -58,7 +72,7 @@ class Hydrator
         $this->objectLoadabilityChecker->checkIfIsLoadable($object);
 
         $normalizedData = [];
-        $classMetadata = $this->modelLoader->load(get_class($object));
+        $classMetadata = $this->modelLoader->load(get_class($object), $this->getClassNameUsedInConfig($object));
         $properties = $this->resolveProperties($classMetadata->getProperties(), $object, $normalizedData, $classMetadata);
         $loadableProperties = $this->filterProperties($properties, fn($property) => $property->hasDataSource());
 
@@ -85,22 +99,25 @@ class Hydrator
     public function hydrate(
         object $object,
         iterable $normalizedData = [],
-        ?ClassMetadata\Model\Property\Leaf $parentPropertyMetadata = null
+        ?Model\Property\Leaf $parentPropertyMetadata = null
     ) : void {
-        $classMetadata = $this->modelLoader->load(get_class($object));
-        $this->methodInvoker->invokeVisitorsCallbacks($classMetadata->getCallbacksUsingMetadata()->getBeforeCollection(), $classMetadata);
+        $classMetadata = $this->modelLoader->load(get_class($object), $this->getClassNameUsedInConfig($object));
+
+        $classBeforeUsingMetadataDto = Observer\Dto\Class_\BeforeUsingMetadata::from($classMetadata);
+        $this->hydratorProcessingObserverManager->classBeforeUsingMetadata($classMetadata, $classBeforeUsingMetadataDto);
 
         $this->hydrateBasicProperties($object, $normalizedData, $classMetadata, $parentPropertyMetadata);
         $this->hydrateLoadableProperties($object, $normalizedData, $classMetadata, false, $parentPropertyMetadata);
 
-        $this->methodInvoker->invokeVisitorsCallbacks($classMetadata->getCallbacksUsingMetadata()->getAfterCollection(), $classMetadata);
+        $classAfterUsingMetadataDto = Observer\Dto\Class_\AfterUsingMetadata::from($classMetadata);
+        $this->hydratorProcessingObserverManager->classAfterUsingMetadata($classMetadata, $classAfterUsingMetadataDto);
     }
 
     private function hydrateBasicProperties(
         object $object,
         iterable $normalizedData,
-        ClassMetadata\Model\Class_ $classMetadata,
-        ?ClassMetadata\Model\Property\Leaf $parentPropertyMetadata = null
+        Model\Class_ $classMetadata,
+        ?Model\Property\Leaf $parentPropertyMetadata = null
     ) : void {
         $propertiesMetadata = $this->resolveProperties($classMetadata->getProperties(), $object, $normalizedData, $classMetadata);
         $basicPropertiesMetadata = $this->filterProperties($propertiesMetadata, fn($propertyMetadata) => !$propertyMetadata->hasDataSource());
@@ -113,22 +130,29 @@ class Hydrator
     private function hydrateBasicProperty(
         object $object,
         iterable $normalizedData,
-        ClassMetadata\Model\Class_ $classMetadata,
-        ClassMetadata\Model\Property\Leaf $propertyMetadata,
-        ?ClassMetadata\Model\Property\Leaf $parentPropertyMetadata = null
+        Model\Class_ $classMetadata,
+        Model\Property\Leaf $propertyMetadata,
+        ?Model\Property\Leaf $parentPropertyMetadata = null
     ) : void {
         $this->initExpressionContext($object, $normalizedData, $classMetadata, $propertyMetadata);
         $this->resolvePropertyDynamicAttributes($propertyMetadata);
 
-        $this->methodInvoker->invokeVisitorsCallbacks($propertyMetadata->getCallbacksUsingMetadata()->getBeforeCollection(), $propertyMetadata);
+        $propertyBeforeUsingMetadataDto = Observer\Dto\Property\BeforeUsingMetadata::from($propertyMetadata, $classMetadata->getName());
+        $this->hydratorProcessingObserverManager->propertyBeforeUsingMetadata($propertyMetadata, $propertyBeforeUsingMetadataDto);
 
         if ($propertyMetadata->hasDefaultValue()) {
             //@todo: here middlewares before using a default value (can modify it)
             $propertyModelValue = $this->resolveValue($propertyMetadata->getDefaultValue(), $object);
             $this->setModelValueToProperty($propertyModelValue, $object, $propertyMetadata, $classMetadata, $parentPropertyMetadata);
         } else {
-            $event = $this->methodInvoker->invokeVisitorsCallbacks($propertyMetadata->getCallbacksHydration()->getBeforeCollection(), new Event\BeforeHydration($normalizedData));
-            $normalizedData = $event->getNormalizedValue();
+            $propertyBeforeHydration = Observer\Dto\Property\BeforeHydration::from(
+                $normalizedData,
+                $propertyMetadata->getName(),
+                $classMetadata->getName()
+            );
+            $this->hydratorProcessingObserverManager->propertyBeforeHydration($propertyMetadata, $propertyBeforeHydration);
+
+            $normalizedData = $propertyBeforeHydration->getRawData();
 
             //Extract normalized property value from normalized data set
             $propertyNormValue = $this->getPropertyNormalizedValue($normalizedData, $propertyMetadata);
@@ -141,26 +165,34 @@ class Hydrator
 
             $propertyModelValue = $this->resolveDefinitiveModel($propertyModelValue, $classMetadata, $propertyMetadata, $parentPropertyMetadata);
 
+            $propertyAfterHydration = Observer\Dto\Property\AfterHydration::from(
+                $propertyModelValue,
+                $normalizedData,
+                $propertyMetadata->getName(),
+                $classMetadata->getName()
+            );
+            $this->hydratorProcessingObserverManager->propertyAfterHydration($propertyMetadata, $propertyAfterHydration);
+            $propertyModelValue = $propertyAfterHydration->getModel();
+
             //Set model value to property
             if ($propertyMetadata->isCollection()) {
                 $this->setCollectionModelValueToProperty($propertyModelValue, $object, $propertyMetadata, $classMetadata, $parentPropertyMetadata);
             } else {
                 $this->setModelValueToProperty($propertyModelValue, $object, $propertyMetadata, $classMetadata, $parentPropertyMetadata);
             }
-
-            $event = $this->methodInvoker->invokeVisitorsCallbacks($propertyMetadata->getCallbacksHydration()->getAfterCollection(), new Event\AfterHydration($object, $normalizedData));
         }
 
-        $this->methodInvoker->invokeVisitorsCallbacks($propertyMetadata->getCallbacksUsingMetadata()->getAfterCollection(), $propertyMetadata);
+        $propertyAfterUsingMetadataDto = Observer\Dto\Property\AfterUsingMetadata::from($propertyMetadata, $classMetadata->getName());
+        $this->hydratorProcessingObserverManager->propertyAfterUsingMetadata($propertyMetadata, $propertyAfterUsingMetadataDto);
 
         $this->resetExpressionContext($object, $normalizedData, $classMetadata, $propertyMetadata);
     }
 
     private function resolveDefinitiveModel(
         $modelValue,
-        ClassMetadata\Model\Class_  $classMetadata,
-        ClassMetadata\Model\Property\Leaf $propertyMetadata,
-        ?ClassMetadata\Model\Property\Leaf $parentPropertyMetadata = null
+        Model\Class_  $classMetadata,
+        Model\Property\Leaf $propertyMetadata,
+        ?Model\Property\Leaf $parentPropertyMetadata = null
     ) {
         if (!$propertyMetadata->isObject()
             || !$propertyMetadata->hasInstanceCreation()
@@ -238,9 +270,9 @@ class Hydrator
     private function hydrateLoadableProperties(
         object $object,
         iterable $normalizedData,
-        ClassMetadata\Model\Class_ $classMetadata,
+        Model\Class_ $classMetadata,
         bool $triggerLazyLoading,
-        ?ClassMetadata\Model\Property\Leaf $parentPropertyMetadata = null
+        ?Model\Property\Leaf $parentPropertyMetadata = null
     ) : void {
         if ($triggerLazyLoading) {
             $this->objectLoadabilityChecker->checkIfIsLoadable($object);
@@ -269,11 +301,11 @@ class Hydrator
     private function hydrateLoadableProperty(
         object $object,
         iterable $normalizedData,
-        ClassMetadata\Model\Class_ $classMetadata,
-        ClassMetadata\Model\Property\Leaf $propertyMetadata,
+        Model\Class_ $classMetadata,
+        Model\Property\Leaf $propertyMetadata,
         bool $triggerLazyLoading,
         array $allLoadableProperties,
-        ?ClassMetadata\Model\Property\Leaf $parentPropertyMetadata = null
+        ?Model\Property\Leaf $parentPropertyMetadata = null
     ) : void {
         if ($triggerLazyLoading) {
             $this->objectLoadabilityChecker->checkIfIsLoadable($object);
@@ -289,8 +321,6 @@ class Hydrator
             return;
         }
 
-        $event = $this->methodInvoker->invokeVisitorsCallbacks($propertyMetadata->getCallbacksUsingMetadata()->getBeforeCollection(), $propertyMetadata);
-
         //Fetch normalized data set from property data source - because we do not use the basic data set of $object.
         $dataSourceNormalizedData = $this->dataFetcher->fetchDataSetByProperty(
             $propertyMetadata,
@@ -300,6 +330,14 @@ class Hydrator
 
         $this->resetExpressionContext($object, $normalizedData, $classMetadata, $propertyMetadata);
         //$dataSourceNormalizedData = $event->getNormalizedValue();
+
+        $propertyBeforeHydration = Observer\Dto\Property\BeforeHydration::from(
+            $dataSourceNormalizedData,
+            $propertyMetadata->getName(),
+            $classMetadata->getName()
+        );
+        $this->hydratorProcessingObserverManager->propertyBeforeHydration($propertyMetadata, $propertyBeforeHydration);
+        $dataSourceNormalizedData = $propertyBeforeHydration->getRawData();
 
         $propertiesIndexedByDataSources = $this->extractPropertiesWithGivenPropertyDataSource($propertyMetadata, $allLoadableProperties);
         foreach ($propertiesIndexedByDataSources as $propertyMetadata) {
@@ -312,9 +350,23 @@ class Hydrator
             }
 
             //Hydrate model value from normalized value
-            $event = $this->methodInvoker->invokeVisitorsCallbacks($propertyMetadata->getCallbacksHydration()->getBeforeCollection(), new Event\BeforeHydration($dataSourceNormalizedData));
+            $propertyBeforeHydration = Observer\Dto\Property\BeforeHydration::from(
+                $propertyNormValue,
+                $propertyMetadata->getName(),
+                $classMetadata->getName()
+            );
+            $this->hydratorProcessingObserverManager->propertyBeforeHydration($propertyMetadata, $propertyBeforeHydration);
+            $propertyNormValue = $propertyBeforeHydration->getRawData();
+
             $this->hydrateProperty($propertyModelValue, $propertyNormValue, $object, $propertyMetadata, null, $parentPropertyMetadata);
-            $this->methodInvoker->invokeVisitorsCallbacks($propertyMetadata->getCallbacksHydration()->getAfterCollection(), new Event\AfterHydration($object, $dataSourceNormalizedData));
+
+            $propertyAfterHydration = Observer\Dto\Property\AfterHydration::from(
+                $propertyModelValue,
+                $propertyNormValue,
+                $propertyMetadata->getName(),
+                $classMetadata->getName()
+            );
+            $this->hydratorProcessingObserverManager->propertyAfterHydration($propertyMetadata, $propertyAfterHydration);
 
             $propertyModelValue = $this->resolveDefinitiveModel($propertyModelValue, $classMetadata, $propertyMetadata, $parentPropertyMetadata);
 
@@ -335,9 +387,9 @@ class Hydrator
         }
     }
 
-    private function getPropertyNormalizedValue($normalizedData, ClassMetadata\Model\Property\Leaf $property)
+    private function getPropertyNormalizedValue($normalizedData, Model\Property\Leaf $property)
     {
-        if ($property->hasRawDataLocation() && Enum\RawDataLocation::PARENT_ === $property->getRawDataLocation()) {
+        if ($property->hasRawDataLocation() && Enum\RawDataLocation::PARENT_ === $property->getRawDataLocation()->getLocationName()) {
             return $normalizedData;
         }
 
@@ -353,8 +405,8 @@ class Hydrator
         &$modelValue,
         $normalizedValue,
         object $objectToSet,
-        ClassMetadata\Model\Property\Leaf $property,
-        ?ClassMetadata\Model\Property\Leaf $parentPropertyMetadata = null
+        Model\Property\Leaf $property,
+        ?Model\Property\Leaf $parentPropertyMetadata = null
     ) : void {
         /*if (! $property->areRawDataToHydrate()) {
             $modelValue = $normalizedValue;
@@ -376,8 +428,8 @@ class Hydrator
         &$modelValue,
         $normalizedValue,
         object $objectToSet,
-        ClassMetadata\Model\Property\Leaf $property,
-        ?ClassMetadata\Model\Property\Leaf $parentPropertyMetadata = null
+        Model\Property\Leaf $property,
+        ?Model\Property\Leaf $parentPropertyMetadata = null
     ) : void {
         $modelValue = [];
 
@@ -419,9 +471,9 @@ class Hydrator
         &$modelValue,
         $normalizedValue,
         object $objectToSet,
-        ClassMetadata\Model\Property\Leaf $propertyMetadata,
+        Model\Property\Leaf $propertyMetadata,
         ?ClassMetadata\Dto\ClassInfo $currentItemCollectionClassInfo,
-        ?ClassMetadata\Model\Property\Leaf $parentPropertyMetadata = null
+        ?Model\Property\Leaf $parentPropertyMetadata = null
     ) : void {
         if ($propertyMetadata->hasRawDataLocation()) {
             $normalizedValue = $propertyMetadata->locateConcernedRawData(
@@ -460,7 +512,7 @@ class Hydrator
         $modelValue = $event->getModelValue();
     }
 
-    private function hydrateScalarProperty(&$modelValue, $normalizedValue, ClassMetadata\Model\Property\Leaf $property) : void
+    private function hydrateScalarProperty(&$modelValue, $normalizedValue, Model\Property\Leaf $property) : void
     {
         $event = $this->methodInvoker->invokeVisitorsCallbacks($property->getCallbacksHydration()->getBeforeCollection(), new Event\BeforeHydration($normalizedValue));
         $normalizedValue = $event->getNormalizedValue();
@@ -475,9 +527,9 @@ class Hydrator
     private function setModelValueToProperty(
         $valueToBeSetted,
         object $objectToSet,
-        ClassMetadata\Model\Property\Leaf $propToSetMetadata,
-        ClassMetadata\Model\Class_ $classMetadata,
-        ?ClassMetadata\Model\Property\Leaf $parentPropertyMetadata = null
+        Model\Property\Leaf $propToSetMetadata,
+        Model\Class_ $classMetadata,
+        ?Model\Property\Leaf $parentPropertyMetadata = null
     ) : void {
         /**
          * If constructor method args are to hydrate, we create a temporary object
@@ -496,6 +548,14 @@ class Hydrator
             return;
         }
 
+        $propertyBeforeAssigningHydratedValue = Observer\Dto\Property\BeforeAssigningHydratedValue::from(
+            $valueToBeSetted,
+            $propToSetMetadata->getName(),
+            get_class($objectToSet)
+        );
+        $this->hydratorProcessingObserverManager->propertyBeforeAssigningHydratedValue($propToSetMetadata, $propertyBeforeAssigningHydratedValue);
+        $valueToBeSetted = $propertyBeforeAssigningHydratedValue->getModelValueToAssign();
+
         $this->methodInvoker->invokeVisitorsCallbacks(
             $propToSetMetadata->getCallbacksAssigningHydratedValue()->getBeforeCollection(),
             new Event\BeforeSettingHydratedValue($valueToBeSetted, $objectToSet, $propToSetMetadata->getName())
@@ -504,20 +564,27 @@ class Hydrator
         $memberAccessStrategy = $this->memberAccessStrategyFactory->getterSetter($objectToSet, $classMetadata);
         $memberAccessStrategy->setValue($valueToBeSetted, $propToSetMetadata);
 
-        $this->methodInvoker->invokeVisitorsCallbacks($propToSetMetadata->getCallbacksAssigningHydratedValue()->getAfterCollection());
+        $propertyAfterAssigningHydratedValue = Observer\Dto\Property\AfterAssigningHydratedValue::from(
+            $valueToBeSetted,
+            $propToSetMetadata->getName(),
+            $objectToSet
+        );
+        $this->hydratorProcessingObserverManager->propertyAfterAssigningHydratedValue($propToSetMetadata, $propertyAfterAssigningHydratedValue);
     }
 
     private function setCollectionModelValueToProperty(
         array $valueToBeSetted,
         object $objectToSet,
-        ClassMetadata\Model\Property\Leaf $propToSetMetadata,
-        ClassMetadata\Model\Class_ $classMetadata,
-        ?ClassMetadata\Model\Property\Leaf $parentPropertyMetadata = null
+        Model\Property\Leaf $propToSetMetadata,
+        Model\Class_ $classMetadata,
+        ?Model\Property\Leaf $parentPropertyMetadata = null
     ) : void {
-        $this->methodInvoker->invokeVisitorsCallbacks(
-            $propToSetMetadata->getCallbacksAssigningHydratedValue()->getBeforeCollection(),
-            new Event\BeforeSettingHydratedValue($valueToBeSetted, $objectToSet, $propToSetMetadata->getName())
+        $propertyBeforeAssigningHydratedValue = Observer\Dto\Property\BeforeAssigningHydratedValue::from(
+            $valueToBeSetted,
+            $propToSetMetadata->getName(),
+            get_class($objectToSet)
         );
+        $this->hydratorProcessingObserverManager->propertyBeforeAssigningHydratedValue($propToSetMetadata, $propertyBeforeAssigningHydratedValue);
 
         if (/*$classMetadata->areAccessorsToBypass() ||*/ null !== $parentPropertyMetadata
             && $parentPropertyMetadata->hasInstanceCreation()
@@ -530,10 +597,15 @@ class Hydrator
 
         $memberAccessStrategy->setValues($valueToBeSetted, $propToSetMetadata);
 
-        $this->methodInvoker->invokeVisitorsCallbacks($propToSetMetadata->getCallbacksAssigningHydratedValue()->getAfterCollection());
+        $propertyAfterAssigningHydratedValue = Observer\Dto\Property\AfterAssigningHydratedValue::from(
+            $valueToBeSetted,
+            $propToSetMetadata->getName(),
+            $objectToSet
+        );
+        $this->hydratorProcessingObserverManager->propertyAfterAssigningHydratedValue($propToSetMetadata, $propertyAfterAssigningHydratedValue);
     }
 
-    /*public function guessMemberAccessStrategyFromLoadingOption(object $object, ClassMetadata\Model\Class_ $classMetadata, bool $byPassLoading) : MemberAccessStrategyInterface
+    /*public function guessMemberAccessStrategyFromLoadingOption(object $object, Model\Class_ $classMetadata, bool $byPassLoading) : MemberAccessStrategyInterface
     {
         if ($byPassLoading) {
             return $this->createPropertyAccessStrategy($object, $classMetadata);
@@ -555,7 +627,7 @@ class Hydrator
         return $filteredProperties;
     }
 
-    private function extractPropertiesWithGivenPropertyDataSource(ClassMetadata\Model\Property\Leaf $propertyWithDataSourceToFilterOn, array $properties)
+    private function extractPropertiesWithGivenPropertyDataSource(Model\Property\Leaf $propertyWithDataSourceToFilterOn, array $properties)
     {
         $dataSourceToFilterOn = $propertyWithDataSourceToFilterOn->getDataSource();
 
@@ -605,7 +677,7 @@ class Hydrator
         array $properties,
         object $object,
         iterable $normalizedData,
-        ClassMetadata\Model\Class_ $classMetadata
+        Model\Class_ $classMetadata
     ) : array {
         $resolvedProperties = [];
 
@@ -617,10 +689,10 @@ class Hydrator
     }
 
     private function resolveProperty(
-        ClassMetadata\Model\Property $property,
+        Model\Property $property,
         object $object,
         iterable $normalizedData,
-        ClassMetadata\Model\Class_ $classMetadata
+        Model\Class_ $classMetadata
     ) {
         $resolvedProperty = $property;
         $this->initExpressionContext($object, $normalizedData, $classMetadata, $property);
@@ -636,22 +708,22 @@ class Hydrator
         return $resolvedProperty;
     }
 
-    private function resolvePropertyDynamicAttributes(ClassMetadata\Model\Property\Leaf $property) : void
+    private function resolvePropertyDynamicAttributes(Model\Property\Leaf $property) : void
     {
         foreach ($property->getDynamicAttributes() as $dynamicAttributeName => $dynamicAttribute) {
-            if ($dynamicAttribute instanceof ClassMetadata\Model\Method) {
+            if ($dynamicAttribute instanceof Model\Method) {
                 $property->$dynamicAttributeName = $this->methodInvoker->invokeMethod($dynamicAttribute);
-            } elseif ($dynamicAttribute instanceof ClassMetadata\Model\Expression) {
+            } elseif ($dynamicAttribute instanceof Model\Expression) {
                 $property->$dynamicAttributeName = $this->expressionEvaluator->resolveAdvancedExpression($dynamicAttribute->getValue());
             } else {
                 throw new \LogicException(sprintf(
                     'Cannot resolve dynamic value of attribute "%s::%s" of property %s.' .
                     PHP_EOL . 'Dynamic value must be an instance of either "%s" or "%s" but type "%s" given.',
-                    ClassMetadata\Model\Property\Leaf::class,
+                    Model\Property\Leaf::class,
                     $dynamicAttributeName,
                     $property->getName(),
-                    ClassMetadata\Model\Method::class,
-                    ClassMetadata\Model\Expression::class,
+                    Model\Method::class,
+                    Model\Expression::class,
                     is_object($dynamicAttribute) ? get_class($dynamicAttribute) : gettype($dynamicAttribute)
                 ));
             }
@@ -661,8 +733,8 @@ class Hydrator
     private function initExpressionContext(
         object $object,
         iterable $normalizedData,
-        ClassMetadata\Model\Class_ $classMetadata,
-        ?ClassMetadata\Model\Property $property
+        Model\Class_ $classMetadata,
+        ?Model\Property $property
     ) : iterable {
         $previousExpressionContext = $this->expressionContext;
 
@@ -692,8 +764,8 @@ class Hydrator
     private function resetExpressionContext(
         object $object,
         iterable $normalizedData,
-        ClassMetadata\Model\Class_ $classMetadata,
-        ClassMetadata\Model\Property $property
+        Model\Class_ $classMetadata,
+        Model\Property $property
     ) : void {
         unset($this->expressionContext['object']);
         unset($this->expressionContext['normalized_data']);

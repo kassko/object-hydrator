@@ -83,17 +83,17 @@ abstract class PropertyConfig
      * @internal
      * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Callbacks
      */
-    //public ?Callbacks $callbacksUsingMetadata = null;
+    public ?Callbacks $callbacksUsingMetadata = null;
     /**
      * @internal
      * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Callbacks
      */
-    //public ?Callbacks $callbacksHydration = null;
+    public ?Callbacks $callbacksHydration = null;
     /**
      * @internal
      * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Callbacks
      */
-    //public ?Callbacks $callbacksAssigningHydratedValue = null;
+    public ?Callbacks $callbacksAssigningHydratedValue = null;
     //=== Annotations attributes : end ===//
 
 
@@ -110,7 +110,7 @@ abstract class PropertyConfig
     }
 
     public function __set(string $name , $value) : void
-    {var_dump('ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo', $name);
+    {//var_dump('ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo', $name);
         if ($this->dynamicAttributeMarker !== $name[0]) {
             throw new \LogicException(sprintf(
                 'Cannot set property "%s::%s" because it does not exists.',

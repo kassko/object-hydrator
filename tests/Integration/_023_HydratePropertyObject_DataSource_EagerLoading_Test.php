@@ -1,12 +1,20 @@
 <?php
 
-namespace Kassko\ObjectHydratorTest\Integration;
+namespace Kassko\ObjectHydratorIntegrationTest;
 
 use Kassko\ObjectHydrator\{Annotation\Doctrine as BHY, HydratorBuilder, ObjectExtension\LoadableTrait};
+use Kassko\ObjectHydratorIntegrationTest\Helper;
 use PHPUnit\Framework\TestCase;
 
 class _023_HydratePropertyObject_DataSource_EagerLoading_Test extends TestCase
 {
+    use Helper\IntegrationTestTrait;
+
+    public function setup() : void
+    {
+        $this->initHydrator();
+    }
+
     /**
      * @test
      */
@@ -27,7 +35,7 @@ class _023_HydratePropertyObject_DataSource_EagerLoading_Test extends TestCase
              * @BHY\PropertyConfig\SingleType(
              *      dataSource=@BHY\DataSource(
              *          method=@BHY\Method(
-             *              class="Kassko\ObjectHydratorTest\Integration\Fixture\Service\EmailService",
+             *              class="Kassko\ObjectHydratorIntegrationTest\Fixture\Service\EmailService",
              *              name="getData",
              *              args={"#id"}
              *          ),
@@ -52,8 +60,8 @@ class _023_HydratePropertyObject_DataSource_EagerLoading_Test extends TestCase
             public function setEmail(string $email) { $this->email = $email; }
         };
 
-        $hydrator = (new HydratorBuilder())->build();
-        $hydrator->hydrate($person, $rawData);
+
+        $this->hydrator->hydrate($person, $rawData);
 
         $this->assertSame(1, $person->getId());//Ensure id passed to constructor is not loose after object hydration.
         $this->assertSame('Dany', $person->getFirstName());

@@ -14,7 +14,7 @@ class EssentialDataProvider
     use PropertyCandidatesResolverAwareTrait;
 
     private object $object;
-    private ClassMetadata\Model\Class_ $classMetadata;
+    private Model\Class_ $classMetadata;
     private DataFetcher $dataFetcher;
     private MemberAccessStrategyFactory $memberAccessStrategyFactory;
     private ?\Closure $serviceLocator = null;
@@ -29,7 +29,7 @@ class EssentialDataProvider
         $this->serviceLocator = $serviceLocator;
     }
 
-    public function withContext(object $object, ClassMetadata\Model\Class_ $classMetadata) : self
+    public function withContext(object $object, Model\Class_ $classMetadata) : self
     {
         $this->object = $object;
         $this->classMetadata = $classMetadata;

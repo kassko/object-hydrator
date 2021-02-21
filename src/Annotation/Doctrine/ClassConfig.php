@@ -2,7 +2,7 @@
 
 namespace Kassko\ObjectHydrator\Annotation\Doctrine;
 
-use Kassko\ObjectHydrator\ClassMetadata\Model\Enum;
+use Kassko\ObjectHydrator\Model\Enum;
 
 /**
  * @Annotation

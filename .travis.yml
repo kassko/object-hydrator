@@ -1,0 +1,13 @@
+language: php
+dist: trusty
+php:
+    - 7.4
+    - 8.0
+before_script:
+    - composer self-update -q
+    - composer install -n
+script:
+  # Execute the integration tests
+  - ./bin/phpunit -c tests/unit
+  - ./bin/phpunit -c tests/integration
+  - ./bin/phpunit -c framework-bridge/symfony/tests/integration

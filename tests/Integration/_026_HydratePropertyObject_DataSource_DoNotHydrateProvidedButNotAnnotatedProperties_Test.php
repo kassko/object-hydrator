@@ -1,12 +1,20 @@
 <?php
 
-namespace Kassko\ObjectHydratorTest\Integration;
+namespace Kassko\ObjectHydratorIntegrationTest;
 
 use Kassko\ObjectHydrator\{Annotation\Doctrine as BHY, HydratorBuilder, ObjectExtension\LoadableTrait};
+use Kassko\ObjectHydratorIntegrationTest\Helper;
 use PHPUnit\Framework\TestCase;
 
 class _026_HydratePropertyObject_DataSource_DoNotHydrateProvidedButNotAnnotatedProperties_Test extends TestCase
 {
+    use Helper\IntegrationTestTrait;
+
+    public function setup() : void
+    {
+        $this->initHydrator();
+    }
+
     /**
      * @test
      */
@@ -20,7 +28,7 @@ class _026_HydratePropertyObject_DataSource_DoNotHydrateProvidedButNotAnnotatedP
              * @BHY\PropertyConfig\SingleType(
              *      dataSource=@BHY\DataSource(
              *          method=@BHY\Method(
-             *              class="Kassko\ObjectHydratorTest\Integration\Fixture\Service\PersonService",
+             *              class="Kassko\ObjectHydratorIntegrationTest\Fixture\Service\PersonService",
              *              name="getData",
              *              args={"#id"}
              *          )
@@ -45,8 +53,8 @@ class _026_HydratePropertyObject_DataSource_DoNotHydrateProvidedButNotAnnotatedP
             public function setPhone(string $phone) { $this->phone = $phone; }
         };
 
-        $hydrator = (new HydratorBuilder())->build();
-        $hydrator->hydrate($person);
+
+        $this->hydrator->hydrate($person);
 
         $this->assertSame(1, $person->getId());
         $this->assertEquals('Dany', $person->getFirstName());

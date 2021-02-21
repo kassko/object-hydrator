@@ -1,13 +1,21 @@
 <?php
 
-namespace Kassko\ObjectHydratorTest\Integration;
+namespace Kassko\ObjectHydratorIntegrationTest;
 
 use Kassko\ObjectHydrator\{Annotation\Doctrine as BHY, HydratorBuilder};
-use Kassko\ObjectHydratorTest\Integration\Fixture\Model\Address\AddressSimple;
+use Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Address\AddressSimple;
+use Kassko\ObjectHydratorIntegrationTest\Helper;
 use PHPUnit\Framework\TestCase;
 
 class _019_HydrateProperty_RawDataLocation_Items_Test extends TestCase
 {
+    use Helper\IntegrationTestTrait;
+
+    public function setup() : void
+    {
+        $this->initHydrator();
+    }
+
     /**
      * @test
      */
@@ -30,7 +38,7 @@ class _019_HydrateProperty_RawDataLocation_Items_Test extends TestCase
             private ?string $lastName = null;
             /**
              * @BHY\PropertyConfig\SingleType(
-             *      class="\Kassko\ObjectHydratorTest\Integration\Fixture\Model\Address\AddressSimple",
+             *      class="\Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Address\AddressSimple",
              *      rawDataLocation=@BHY\RawDataLocation(
              *          locationName="parent",
              *          keysMappingValues={"billing_street": "street", "billing_city": "city", "billing_country": "country"}
@@ -40,7 +48,7 @@ class _019_HydrateProperty_RawDataLocation_Items_Test extends TestCase
             private ?AddressSimple $billingAddress = null;
             /**
              * @BHY\PropertyConfig\SingleType(
-             *      class="\Kassko\ObjectHydratorTest\Integration\Fixture\Model\Address\AddressSimple",
+             *      class="\Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Address\AddressSimple",
              *      rawDataLocation=@BHY\RawDataLocation(
              *          locationName="parent",
              *          keysMappingValues={"delivery_street": "street", "delivery_city": "city", "delivery_country": "country"}
@@ -66,8 +74,8 @@ class _019_HydrateProperty_RawDataLocation_Items_Test extends TestCase
             public function setDeliveryAddress(AddressSimple $deliveryAddress) { $this->deliveryAddress = $deliveryAddress; }
         };
 
-        $hydrator = (new HydratorBuilder())->build();
-        $hydrator->hydrate($person, $rawData);
+
+        $this->hydrator->hydrate($person, $rawData);
 
         $this->assertSame(1, $person->getId());
         $this->assertSame('Dany', $person->getFirstName());

@@ -1,5 +1,5 @@
 <?php
-namespace Kassko\ObjectHydrator\FrameworkBridge\Symfony;
+namespace Kassko\FrameworkBridge\Symfony\ObjectHydrator;
 
 use Psr\Container\ContainerInterface;
 

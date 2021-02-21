@@ -3,7 +3,7 @@
 namespace Kassko\ObjectHydrator;
 
 use Kassko\ObjectHydrator\ClassMetadata;
-use Kassko\ObjectHydrator\ClassMetadata\Model\Property\{Candidates, Leaf};
+use Kassko\ObjectHydrator\Model\Property\{Candidates, Leaf};
 
 use function sprintf;
 

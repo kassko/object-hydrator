@@ -1,13 +1,21 @@
 <?php
 
-namespace Kassko\ObjectHydratorTest\Integration;
+namespace Kassko\ObjectHydratorIntegrationTest;
 
 use Kassko\ObjectHydrator\{Annotation\Doctrine as BHY, HydratorBuilder};
-use Kassko\ObjectHydratorTest\Integration\Fixture;
+use Kassko\ObjectHydratorIntegrationTest\Fixture;
+use Kassko\ObjectHydratorIntegrationTest\Helper;
 use PHPUnit\Framework\TestCase;
 
 class _016_HydrateCollectionOfObjectsGivenSuperType extends TestCase
 {
+    use Helper\IntegrationTestTrait;
+
+    public function setup() : void
+    {
+        $this->initHydrator();
+    }
+
     /**
      * @test
      */
@@ -34,11 +42,11 @@ class _016_HydrateCollectionOfObjectsGivenSuperType extends TestCase
              * @BHY\PropertyConfig\CollectionType(
              *      itemClassCandidates=@BHY\ItemClassCandidates(
              *          @BHY\ItemClassCandidate(
-             *              value="Kassko\ObjectHydratorTest\Integration\Fixture\Model\Car\GasolinePoweredCar",
+             *              value="Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Car\GasolinePoweredCar",
              *              discriminatorExpression=@BHY\Expression(value="rawItemDataKeyExists('gasoline_kind')")
              *          ),
              *          @BHY\ItemClassCandidate(
-             *              value="Kassko\ObjectHydratorTest\Integration\Fixture\Model\Car\ElectricCar",
+             *              value="Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Car\ElectricCar",
              *              discriminatorExpression=@BHY\Expression(value="rawItemDataKeyExists('energy_provider')")
              *          )
              *      )
@@ -54,8 +62,8 @@ class _016_HydrateCollectionOfObjectsGivenSuperType extends TestCase
             public function addCarsItem(Fixture\Model\Car\Car $car) { $this->cars[] = $car; }
         };
 
-        $hydrator = (new HydratorBuilder())->build();
-        $hydrator->hydrate($garage, $primaryData);
+
+        $this->hydrator->hydrate($garage, $primaryData);
 
         $this->assertSame(1, $garage->getId());
 

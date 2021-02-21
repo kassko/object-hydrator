@@ -36,7 +36,7 @@ class MethodInvoker
         return $this;
     }
 
-    public function invokeMethod(?ClassMetadata\Model\Method $method, array $args = [], ?object $instance = null)
+    public function invokeMethod(?Model\Method $method, array $args = [], ?object $instance = null)
     {
         if (null === $method) {
             return null;
@@ -97,14 +97,14 @@ class MethodInvoker
             return $event;
         }
 
-        foreach ($methods->items as $method) {
+        foreach ($methods as $method) {
             $this->invokeVisitorCallback($method, $event);
         }
 
         return $event;
     }
 
-    public function invokeVisitorCallback(?ClassMetadata\Model\Method $method, ?object $event = null) : ?object
+    public function invokeVisitorCallback(?Model\Method $method, ?object $event = null) : ?object
     {
         if (null === $method) {
             return $event;
@@ -120,7 +120,7 @@ class MethodInvoker
                 throw new \BadMethodCallException(sprintf('Cannot invoke static method with class: %s and method: %s', $class, $methodName));
             }
 
-            $args = $this->invokeStaticMethodWith($class, $methodName, $event ? [$event] : [], $this->getCache());
+            $args = $this->invokeStaticMethodWith($class, $methodName, $event ? [$event] : [], /*$this->getCache()*/);
         } else {
             if ($method->isInvokerAService()) {
                 try {

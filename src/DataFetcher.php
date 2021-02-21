@@ -3,31 +3,39 @@
 namespace Kassko\ObjectHydrator;
 
 use Kassko\ObjectHydrator\ClassMetadata;
+use Kassko\ObjectHydrator\Observer;
 
 class DataFetcher
 {
     private MethodInvoker $methodInvoker;
+    private Observer\HydratorProcessingObserverManager $hydratorProcessingObserverManager;
 
-    public function __construct(MethodInvoker $methodInvoker)
-    {
+    public function __construct(
+        MethodInvoker $methodInvoker,
+        Observer\HydratorProcessingObserverManager $hydratorProcessingObserverManager
+    ) {
         $this->methodInvoker = $methodInvoker;
+        $this->hydratorProcessingObserverManager = $hydratorProcessingObserverManager;
     }
 
-    public function fetchDataSetByProperty(ClassMetadata\Model\Property\Leaf $propertyOptionsMetadata, object $object, ClassMetadata\Model\Class_ $classMetadata)
-    {
+    public function fetchDataSetByProperty(
+        Model\Property\Leaf $propertyOptionsMetadata,
+        object $object,
+        Model\Class_ $classMetadata
+    ) {
         $data = [];
         $indexedByPropertiesKeys = true;
 
         if ($propertyOptionsMetadata->hasDataSource()) {
             $dataSourceMetadata = $propertyOptionsMetadata->getDataSource();
-            $data = $this->fetchDataFromDataSource($dataSourceMetadata, $object, $classMetadata);
+            $data = $this->fetchDataFromDataSource($dataSourceMetadata, $object, $classMetadata, $propertyOptionsMetadata->getName());
             $indexedByPropertiesKeys = $dataSourceMetadata->isIndexedByPropertiesKeys();
         }
 
         return $indexedByPropertiesKeys ? $data : [$propertyOptionsMetadata->getKeyInRawData() => $data];
     }
 
-    private function fetchDataFromDataSources(array $dataSourcesMetadata, object $object, ClassMetadata\Model\Class_ $classMetadata)
+    /*private function fetchDataFromDataSources(array $dataSourcesMetadata, object $object, Model\Class_ $classMetadata)
     {
         $dataByDataSources = [];
 
@@ -36,50 +44,86 @@ class DataFetcher
         }
 
         return $dataByDataSources;
-    }
+    }*/
 
     private function fetchDataFromDataSource(
-        ClassMetadata\Model\DataSource $dataSourceMetadata,
+        Model\DataSource $dataSourceMetadata,
         object $object,
-        ClassMetadata\Model\Class_ $classMetadata
+        Model\Class_ $classMetadata,
+        string $propertyName
     ) {
-        $this->methodInvoker->invokeVisitorsCallbacks($dataSourceMetadata->getCallbacksUsingMetadata()->getBeforeCollection(), $dataSourceMetadata);
-        $this->methodInvoker->invokeVisitorsCallbacks($dataSourceMetadata->getCallbacksFetchingData()->getBeforeCollection());
-
-        if (! $dataSourceMetadata->hasFallBackDataSource()) {
-            return $this->invokeDataSource($dataSourceMetadata, $classMetadata);
-        }
-
-        if (ClassMetadata\Model\DataSource::ON_FAIL_CHECK_RETURN_VALUE === $dataSourceMetadata->getOnFail()) {
-            $data = $this->invokeDataSource($dataSourceMetadata, $classMetadata);
-
-            if ($dataSourceMetadata->areDataInvalid($data)) {
-                $dataSourceMetadata = $classMetadata->findSourceById($dataSourceMetadata->getFallbackSourceId());
-                return $this->fetchDataFromDataSource($dataSourceMetadata, $object, $classMetadata);
-            }
-
-            return $data;
-        }
-
-        //Else ClassMetadata\Model\Source::ON_FAIL_CHECK_EXCEPTION === $dataSource->getOnFail().
         try {
-            $data = $this->invokeDataSource($dataSourceMetadata, $classMetadata);
-        } catch (\Exception $e) {
-            $exceptionClass = $dataSourceMetadata->getExceptionClass();
-            if (! $e instanceof $exceptionClass) {
-                throw $e;
+            $data = null;
+
+            $beforeUsingDataSourceMetadataDto = Observer\Dto\DataSource\BeforeUsingMetadata::from(
+                $dataSourceMetadata,
+                $classMetadata->getName(),
+                $propertyName
+            );
+            $this->hydratorProcessingObserverManager->dataSourceBeforeUsingMetadata($dataSourceMetadata, $beforeUsingDataSourceMetadataDto);
+
+
+            $beforeFetchingDataDto = Observer\Dto\DataSource\BeforeFetchingData::from(
+                $dataSourceMetadata->getId(),
+                get_class($object),
+                $propertyName
+            );
+            $this->hydratorProcessingObserverManager->dataSourceBeforeFetchingData($dataSourceMetadata, $beforeFetchingDataDto);
+
+            $data = $beforeFetchingDataDto->getRawData();
+
+            if (! $dataSourceMetadata->hasFallBackDataSource()) {
+                return $this->invokeDataSource($dataSourceMetadata, $classMetadata);
             }
 
-            $fallBackDataSourceMetadata = $classMetadata->findSourceById($dataSourceMetadata->getFallbackDataSource()->getId());
-            return $this->fetchDataFromDataSource($fallBackDataSourceMetadata, $object, $classMetadata);
+            if (Model\DataSource::ON_FAIL_CHECK_RETURN_VALUE === $dataSourceMetadata->getOnFail()) {
+                $data = $this->invokeDataSource($dataSourceMetadata, $classMetadata);
+
+                if ($dataSourceMetadata->areDataInvalid($data)) {
+                    $dataSourceMetadata = $classMetadata->findSourceById($dataSourceMetadata->getFallbackSourceId());
+                    return $this->fetchDataFromDataSource($dataSourceMetadata, $object, $classMetadata, $propertyName);
+                }
+
+                return $data;
+            }
+
+            //Else Model\Source::ON_FAIL_CHECK_EXCEPTION === $dataSource->getOnFail().
+            try {
+                $data = $this->invokeDataSource($dataSourceMetadata, $classMetadata);
+            } catch (\Exception $e) {
+                $exceptionClass = $dataSourceMetadata->getExceptionClass();
+                if (! $e instanceof $exceptionClass) {
+                    throw $e;
+                }
+
+                $fallBackDataSourceMetadata = $classMetadata->findSourceById($dataSourceMetadata->getFallbackDataSource()->getId());
+                return $this->fetchDataFromDataSource($fallBackDataSourceMetadata, $object, $classMetadata, $propertyName);
+            }
+        } finally {
+            var_dump(__METHOD__, 'finally');
+
+            $afterFetchingDataDto = Observer\Dto\DataSource\AfterFetchingData::from(
+                $data,
+                $dataSourceMetadata->getId(),
+                get_class($object),
+                $propertyName
+            );
+            $this->hydratorProcessingObserverManager->dataSourceAfterFetchingData($dataSourceMetadata, $afterFetchingDataDto);
+            $data = $afterFetchingDataDto->getRawData();
+
+            $dataSourceAfterUsingMetadataDto = Observer\Dto\DataSource\AfterUsingMetadata::from(
+                $dataSourceMetadata,
+                $classMetadata->getName(),
+                $propertyName
+            );
+            $this->hydratorProcessingObserverManager->dataSourceAfterUsingMetadata($dataSourceMetadata, $dataSourceAfterUsingMetadataDto);
         }
 
-        $event = $this->methodInvoker->invokeVisitorsCallbacks($dataSourceMetadata->getCallbacksFetchingData()->getAfterCollection(), new Event\AfterDataFetching($data));
-
-        return $event->getNormalizedValue();
+        var_dump(__METHOD__, 'return');
+        return $data;
     }
 
-    private function invokeDataSource(ClassMetadata\Model\DataSource $dataSourceMetadata)
+    private function invokeDataSource(Model\DataSource $dataSourceMetadata)
     {
         return $this->methodInvoker->invokeMethod($dataSourceMetadata->getMethod());
     }

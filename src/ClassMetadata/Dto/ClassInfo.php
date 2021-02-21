@@ -2,7 +2,7 @@
 
 namespace Kassko\ObjectHydrator\ClassMetadata\Dto;
 
-use Kassko\ObjectHydrator\ClassMetadata\Model\Fragment;
+use Kassko\ObjectHydrator\Model\Fragment;
 
 class ClassInfo
 {

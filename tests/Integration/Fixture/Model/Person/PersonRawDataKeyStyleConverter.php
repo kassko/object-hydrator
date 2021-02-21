@@ -1,6 +1,6 @@
 <?php
 
-namespace Kassko\ObjectHydratorTest\Integration\Fixture\Model\Person;
+namespace Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Person;
 
 use Kassko\ObjectHydrator\Annotation\Doctrine as BHY;
 
@@ -8,7 +8,7 @@ use Kassko\ObjectHydrator\Annotation\Doctrine as BHY;
  * @BHY\ClassConfig(
  *      rawDataKeyStyle="custom",
  *      rawDataKeyStyleConverter=@BHY\Method(
- *          class="Kassko\ObjectHydratorTest\Integration\Fixture\Model\Person\PersonRawDataKeyStyleConverter",
+ *          class="Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Person\PersonRawDataKeyStyleConverter",
  *          name="mapPropertyNameToKey"
  *      )
  * )

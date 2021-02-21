@@ -1,12 +1,20 @@
 <?php
 
-namespace Kassko\ObjectHydratorTest\Integration;
+namespace Kassko\ObjectHydratorIntegrationTest;
 
 use Kassko\ObjectHydrator\{Annotation\Doctrine as BHY, HydratorBuilder, ObjectExtension\LoadableTrait};
+use Kassko\ObjectHydratorIntegrationTest\Helper;
 use PHPUnit\Framework\TestCase;
 
 class _027_HydratePropertyObject_DataSource_LoadingScope_DataSource_Test extends TestCase
 {
+    use Helper\IntegrationTestTrait;
+
+    public function setup() : void
+    {
+        $this->initHydrator();
+    }
+
     /**
      * @test
      */
@@ -16,7 +24,7 @@ class _027_HydratePropertyObject_DataSource_LoadingScope_DataSource_Test extends
          * @BHY\DataSource(
          *      id="person",
          *      method=@BHY\Method(
-         *          class="Kassko\ObjectHydratorTest\Integration\Fixture\Service\PersonService",
+         *          class="Kassko\ObjectHydratorIntegrationTest\Fixture\Service\PersonService",
          *          name="getData",
          *          args={"#id"}
          *      ),
@@ -54,8 +62,8 @@ class _027_HydratePropertyObject_DataSource_LoadingScope_DataSource_Test extends
             public function setPhone(string $phone) { $this->phone = $phone; }
         };
 
-        $hydrator = (new HydratorBuilder())->build();
-        $hydrator->hydrate($person);
+
+        $this->hydrator->hydrate($person);
 
         $this->assertSame(1, $person->getId());
         $this->assertSame('Dany', $person->getFirstName());

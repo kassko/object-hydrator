@@ -22,11 +22,11 @@ final class Callbacks
      */
     public ?Method $after = null;
     /**
-     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Method
+     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Methods
      */
     public ?Methods $beforeCollection = null;
     /**
-     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Method
+     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Methods
      */
     public ?Methods $afterCollection = null;
 }

@@ -1,13 +1,21 @@
 <?php
 
-namespace Kassko\ObjectHydratorTest\Integration;
+namespace Kassko\ObjectHydratorIntegrationTest;
 
 use Kassko\ObjectHydrator\{Annotation\Doctrine as BHY, HydratorBuilder};
-use Kassko\ObjectHydratorTest\Integration\Fixture;
+use Kassko\ObjectHydratorIntegrationTest\Fixture;
+use Kassko\ObjectHydratorIntegrationTest\Helper;
 use PHPUnit\Framework\TestCase;
 
 class _009_HydratePropertyCollectionWithDefaultSetterTest extends TestCase
 {
+    use Helper\IntegrationTestTrait;
+
+    public function setup() : void
+    {
+        $this->initHydrator();
+    }
+
     /**
      * @test
      */
@@ -37,7 +45,7 @@ class _009_HydratePropertyCollectionWithDefaultSetterTest extends TestCase
         $flight = new class('W6047') {
             private string $id;
             /**
-             * @BHY\PropertyConfig\CollectionType(itemsClass="Kassko\ObjectHydratorTest\Integration\Fixture\Model\Flight\Passenger")
+             * @BHY\PropertyConfig\CollectionType(itemsClass="Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Flight\Passenger")
              */
             private array $passengers = [];
             /**
@@ -56,8 +64,8 @@ class _009_HydratePropertyCollectionWithDefaultSetterTest extends TestCase
             public function setStops(array $stops) { $this->stops = $stops; }
         };
 
-        $hydrator = (new HydratorBuilder())->build();
-        $hydrator->hydrate($flight, $primaryData);
+
+        $this->hydrator->hydrate($flight, $primaryData);
 
         $this->assertNotNull($flight->getPassengers());
         $this->assertCount(2, $flight->getPassengers());

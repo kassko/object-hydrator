@@ -1,6 +1,6 @@
 <?php
 
-namespace Kassko\ObjectHydratorTest\Integration\Fixture\Model\Flight;
+namespace Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Flight;
 
 use Kassko\ObjectHydrator\Annotation\Doctrine as BHY;
 
