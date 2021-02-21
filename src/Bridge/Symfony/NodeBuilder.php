@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\Hydrator\Bridge\Symfony;
+namespace Kassko\ObjectHydrator\Bridge\Symfony;
 
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition as SfArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\NodeBuilder as BaseNodeBuilder;

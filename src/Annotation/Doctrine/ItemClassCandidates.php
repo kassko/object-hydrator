@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\Hydrator\Annotation\Doctrine;
+namespace Kassko\ObjectHydrator\Annotation\Doctrine;
 
 /**
  * @Annotation
@@ -16,7 +16,7 @@ final class ItemClassCandidates
     /**
      * One or more ItemClassCandidate annotations.
      *
-     * @var array<\Big\Hydrator\Annotation\Doctrine\ItemClassCandidate>
+     * @var array<\Kassko\ObjectHydrator\Annotation\Doctrine\ItemClassCandidate>
      */
     public $items = [];
 }

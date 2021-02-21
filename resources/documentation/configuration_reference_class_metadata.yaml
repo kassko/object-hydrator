@@ -1,0 +1,824 @@
+class_metadata:
+    class:
+        enabled:              true
+        default_autoconfigure_properties: true
+        raw_data_key_style:   underscore # One of "underscore"; "dash"; "camel"; "custom"
+        raw_data_key_style_converter:
+            enabled:              true
+            id:                   null
+            class:                null
+            service_key:          null
+            name:                 null
+            args:                 []
+            magic_call_allowed:   null
+        default_adder_name_format: add%sItem
+        accessors_to_bypass:  false
+        dynamic_attribute_marker: _
+    method:
+        enabled:              true
+        id:                   null
+        class:                null
+        service_key:          null
+        name:                 null
+        args:                 []
+        magic_call_allowed:   null
+    methods:
+
+        # Prototype
+        -
+            enabled:              true
+            id:                   null
+            class:                null
+            service_key:          null
+            name:                 null
+            args:                 []
+            magic_call_allowed:   null
+    expression:
+        enabled:              true
+        id:                   null
+        value:                null
+    expressions:
+
+        # Prototype
+        -
+            enabled:              true
+            id:                   null
+            value:                null
+    data_source:
+        enabled:              true
+        id:                   null
+        method:
+            enabled:              true
+            id:                   null
+            class:                null
+            service_key:          null
+            name:                 null
+            args:                 []
+            magic_call_allowed:   null
+        loading_mode:         lazy # One of "lazy"; "eager"
+        indexed_by_properties_keys: true
+        loading_scope:        data_source # One of "data_source"; "property"; "data_source_only_keys"; "data_source_except_keys"
+        loading_scope_keys:   []
+        fallback_data_source_ref: null
+        after_metadata_loading:
+
+            # Prototype
+            -
+                method:
+                    enabled:              true
+                    id:                   null
+                    class:                null
+                    service_key:          null
+                    name:                 null
+                    args:                 []
+                    magic_call_allowed:   null
+        before_data_fetching:
+
+            # Prototype
+            -
+                method:
+                    enabled:              true
+                    id:                   null
+                    class:                null
+                    service_key:          null
+                    name:                 null
+                    args:                 []
+                    magic_call_allowed:   null
+        after_data_fetching:
+
+            # Prototype
+            -
+                method:
+                    enabled:              true
+                    id:                   null
+                    class:                null
+                    service_key:          null
+                    name:                 null
+                    args:                 []
+                    magic_call_allowed:   null
+    data_sources:
+
+        # Prototype
+        -
+            enabled:              true
+            id:                   null
+            method:
+                enabled:              true
+                id:                   null
+                class:                null
+                service_key:          null
+                name:                 null
+                args:                 []
+                magic_call_allowed:   null
+            loading_mode:         lazy # One of "lazy"; "eager"
+            indexed_by_properties_keys: true
+            loading_scope:        data_source # One of "data_source"; "property"; "data_source_only_keys"; "data_source_except_keys"
+            loading_scope_keys:   []
+            fallback_data_source_ref: null
+            after_metadata_loading:
+
+                # Prototype
+                -
+                    method:
+                        enabled:              true
+                        id:                   null
+                        class:                null
+                        service_key:          null
+                        name:                 null
+                        args:                 []
+                        magic_call_allowed:   null
+            before_data_fetching:
+
+                # Prototype
+                -
+                    method:
+                        enabled:              true
+                        id:                   null
+                        class:                null
+                        service_key:          null
+                        name:                 null
+                        args:                 []
+                        magic_call_allowed:   null
+            after_data_fetching:
+
+                # Prototype
+                -
+                    method:
+                        enabled:              true
+                        id:                   null
+                        class:                null
+                        service_key:          null
+                        name:                 null
+                        args:                 []
+                        magic_call_allowed:   null
+    not_to_autoconfigure_properties: []
+    properties:
+
+        # Prototype
+        -
+            single_type:
+                enabled:              true
+                property_kind:        single_type
+                type:                 null
+                class:                null
+                key_in_raw_data:      null
+                data_source:
+                    enabled:              true
+                    id:                   null
+                    method:
+                        enabled:              true
+                        id:                   null
+                        class:                null
+                        service_key:          null
+                        name:                 null
+                        args:                 []
+                        magic_call_allowed:   null
+                    loading_mode:         lazy # One of "lazy"; "eager"
+                    indexed_by_properties_keys: true
+                    loading_scope:        data_source # One of "data_source"; "property"; "data_source_only_keys"; "data_source_except_keys"
+                    loading_scope_keys:   []
+                    fallback_data_source_ref: null
+                    after_metadata_loading:
+
+                        # Prototype
+                        -
+                            method:
+                                enabled:              true
+                                id:                   null
+                                class:                null
+                                service_key:          null
+                                name:                 null
+                                args:                 []
+                                magic_call_allowed:   null
+                    before_data_fetching:
+
+                        # Prototype
+                        -
+                            method:
+                                enabled:              true
+                                id:                   null
+                                class:                null
+                                service_key:          null
+                                name:                 null
+                                args:                 []
+                                magic_call_allowed:   null
+                    after_data_fetching:
+
+                        # Prototype
+                        -
+                            method:
+                                enabled:              true
+                                id:                   null
+                                class:                null
+                                service_key:          null
+                                name:                 null
+                                args:                 []
+                                magic_call_allowed:   null
+                data_source_ref:      null
+                discriminator_method:
+                    enabled:              true
+                    id:                   null
+                    class:                null
+                    service_key:          null
+                    name:                 null
+                    args:                 []
+                    magic_call_allowed:   null
+                discriminator_expression:
+                    enabled:              true
+                    id:                   null
+                    value:                null
+                discriminator_method_ref: null
+                discriminator_expression_ref: null
+                raw_data_location:
+                    enabled:              true
+                    location_name:        parent # One of "parent"
+                    keys_mapping_values:  []
+                    keys_mapping_prefix:  null
+                    keys_mapping_method:
+                        enabled:              true
+                        id:                   null
+                        class:                null
+                        service_key:          null
+                        name:                 null
+                        args:                 []
+                        magic_call_allowed:   null
+                instance_creation:
+                    enabled:              true
+                    factory_method_name:  null
+                    factory_method:
+                        enabled:              true
+                        id:                   null
+                        class:                null
+                        service_key:          null
+                        name:                 null
+                        args:                 []
+                        magic_call_allowed:   null
+                    set_properties_through_creation_method_when_possible: false
+                    always_access_properties_directly: false
+                    after_construction_method:
+                        enabled:              true
+                        id:                   null
+                        class:                null
+                        service_key:          null
+                        name:                 null
+                        args:                 []
+                        magic_call_allowed:   null
+                    after_construction_methods:
+
+                        # Prototype
+                        -
+                            method:
+                                enabled:              true
+                                id:                   null
+                                class:                null
+                                service_key:          null
+                                name:                 null
+                                args:                 []
+                                magic_call_allowed:   null
+                default_value:        null
+                getter:               null
+                setter:               null
+                dynamic_attribute_marker: null
+                variables:            []
+                dynamic_attributes:   []
+            collection_type:
+                enabled:              true
+                property_kind:        collection_type
+                adder:                null
+                items_class:          null
+                item_class_candidate:
+                    class:                null
+                    raw_data_location:
+                        enabled:              true
+                        location_name:        parent # One of "parent"
+                        keys_mapping_values:  []
+                        keys_mapping_prefix:  null
+                        keys_mapping_method:
+                            enabled:              true
+                            id:                   null
+                            class:                null
+                            service_key:          null
+                            name:                 null
+                            args:                 []
+                            magic_call_allowed:   null
+                    instance_creation:
+                        enabled:              true
+                        factory_method_name:  null
+                        factory_method:
+                            enabled:              true
+                            id:                   null
+                            class:                null
+                            service_key:          null
+                            name:                 null
+                            args:                 []
+                            magic_call_allowed:   null
+                        set_properties_through_creation_method_when_possible: false
+                        always_access_properties_directly: false
+                        after_construction_method:
+                            enabled:              true
+                            id:                   null
+                            class:                null
+                            service_key:          null
+                            name:                 null
+                            args:                 []
+                            magic_call_allowed:   null
+                        after_construction_methods:
+
+                            # Prototype
+                            -
+                                method:
+                                    enabled:              true
+                                    id:                   null
+                                    class:                null
+                                    service_key:          null
+                                    name:                 null
+                                    args:                 []
+                                    magic_call_allowed:   null
+                    discriminator_method:
+                        enabled:              true
+                        id:                   null
+                        class:                null
+                        service_key:          null
+                        name:                 null
+                        args:                 []
+                        magic_call_allowed:   null
+                    discriminator_expression:
+                        enabled:              true
+                        id:                   null
+                        value:                null
+                item_class_candidates:
+
+                    # Prototype
+                    -
+                        class:                null
+                        discriminator_method:
+                            enabled:              true
+                            id:                   null
+                            class:                null
+                            service_key:          null
+                            name:                 null
+                            args:                 []
+                            magic_call_allowed:   null
+                        discriminator_expression:
+                            enabled:              true
+                            id:                   null
+                            value:                null
+                type:                 null
+                class:                null
+                key_in_raw_data:      null
+                data_source:
+                    enabled:              true
+                    id:                   null
+                    method:
+                        enabled:              true
+                        id:                   null
+                        class:                null
+                        service_key:          null
+                        name:                 null
+                        args:                 []
+                        magic_call_allowed:   null
+                    loading_mode:         lazy # One of "lazy"; "eager"
+                    indexed_by_properties_keys: true
+                    loading_scope:        data_source # One of "data_source"; "property"; "data_source_only_keys"; "data_source_except_keys"
+                    loading_scope_keys:   []
+                    fallback_data_source_ref: null
+                    after_metadata_loading:
+
+                        # Prototype
+                        -
+                            method:
+                                enabled:              true
+                                id:                   null
+                                class:                null
+                                service_key:          null
+                                name:                 null
+                                args:                 []
+                                magic_call_allowed:   null
+                    before_data_fetching:
+
+                        # Prototype
+                        -
+                            method:
+                                enabled:              true
+                                id:                   null
+                                class:                null
+                                service_key:          null
+                                name:                 null
+                                args:                 []
+                                magic_call_allowed:   null
+                    after_data_fetching:
+
+                        # Prototype
+                        -
+                            method:
+                                enabled:              true
+                                id:                   null
+                                class:                null
+                                service_key:          null
+                                name:                 null
+                                args:                 []
+                                magic_call_allowed:   null
+                data_source_ref:      null
+                discriminator_method:
+                    enabled:              true
+                    id:                   null
+                    class:                null
+                    service_key:          null
+                    name:                 null
+                    args:                 []
+                    magic_call_allowed:   null
+                discriminator_expression:
+                    enabled:              true
+                    id:                   null
+                    value:                null
+                discriminator_method_ref: null
+                discriminator_expression_ref: null
+                raw_data_location:
+                    enabled:              true
+                    location_name:        parent # One of "parent"
+                    keys_mapping_values:  []
+                    keys_mapping_prefix:  null
+                    keys_mapping_method:
+                        enabled:              true
+                        id:                   null
+                        class:                null
+                        service_key:          null
+                        name:                 null
+                        args:                 []
+                        magic_call_allowed:   null
+                instance_creation:
+                    enabled:              true
+                    factory_method_name:  null
+                    factory_method:
+                        enabled:              true
+                        id:                   null
+                        class:                null
+                        service_key:          null
+                        name:                 null
+                        args:                 []
+                        magic_call_allowed:   null
+                    set_properties_through_creation_method_when_possible: false
+                    always_access_properties_directly: false
+                    after_construction_method:
+                        enabled:              true
+                        id:                   null
+                        class:                null
+                        service_key:          null
+                        name:                 null
+                        args:                 []
+                        magic_call_allowed:   null
+                    after_construction_methods:
+
+                        # Prototype
+                        -
+                            method:
+                                enabled:              true
+                                id:                   null
+                                class:                null
+                                service_key:          null
+                                name:                 null
+                                args:                 []
+                                magic_call_allowed:   null
+                default_value:        null
+                getter:               null
+                setter:               null
+                variables:            []
+                dynamic_attribute_marker: null
+                dynamic_attributes:   []
+            candidates:
+                enabled:              true
+                property_kind:        candidates
+                candidates:
+
+                    # Prototype
+                    -
+                        single_type:
+                            enabled:              true
+                            property_kind:        single_type
+                            type:                 null
+                            class:                null
+                            key_in_raw_data:      null
+                            data_source:
+                                enabled:              true
+                                id:                   null
+                                method:
+                                    enabled:              true
+                                    id:                   null
+                                    class:                null
+                                    service_key:          null
+                                    name:                 null
+                                    args:                 []
+                                    magic_call_allowed:   null
+                                loading_mode:         lazy # One of "lazy"; "eager"
+                                indexed_by_properties_keys: true
+                                loading_scope:        data_source # One of "data_source"; "property"; "data_source_only_keys"; "data_source_except_keys"
+                                loading_scope_keys:   []
+                                fallback_data_source_ref: null
+                                after_metadata_loading:
+
+                                    # Prototype
+                                    -
+                                        method:
+                                            enabled:              true
+                                            id:                   null
+                                            class:                null
+                                            service_key:          null
+                                            name:                 null
+                                            args:                 []
+                                            magic_call_allowed:   null
+                                before_data_fetching:
+
+                                    # Prototype
+                                    -
+                                        method:
+                                            enabled:              true
+                                            id:                   null
+                                            class:                null
+                                            service_key:          null
+                                            name:                 null
+                                            args:                 []
+                                            magic_call_allowed:   null
+                                after_data_fetching:
+
+                                    # Prototype
+                                    -
+                                        method:
+                                            enabled:              true
+                                            id:                   null
+                                            class:                null
+                                            service_key:          null
+                                            name:                 null
+                                            args:                 []
+                                            magic_call_allowed:   null
+                            data_source_ref:      null
+                            discriminator_method:
+                                enabled:              true
+                                id:                   null
+                                class:                null
+                                service_key:          null
+                                name:                 null
+                                args:                 []
+                                magic_call_allowed:   null
+                            discriminator_expression:
+                                enabled:              true
+                                id:                   null
+                                value:                null
+                            discriminator_method_ref: null
+                            discriminator_expression_ref: null
+                            raw_data_location:
+                                enabled:              true
+                                location_name:        parent # One of "parent"
+                                keys_mapping_values:  []
+                                keys_mapping_prefix:  null
+                                keys_mapping_method:
+                                    enabled:              true
+                                    id:                   null
+                                    class:                null
+                                    service_key:          null
+                                    name:                 null
+                                    args:                 []
+                                    magic_call_allowed:   null
+                            instance_creation:
+                                enabled:              true
+                                factory_method_name:  null
+                                factory_method:
+                                    enabled:              true
+                                    id:                   null
+                                    class:                null
+                                    service_key:          null
+                                    name:                 null
+                                    args:                 []
+                                    magic_call_allowed:   null
+                                set_properties_through_creation_method_when_possible: false
+                                always_access_properties_directly: false
+                                after_construction_method:
+                                    enabled:              true
+                                    id:                   null
+                                    class:                null
+                                    service_key:          null
+                                    name:                 null
+                                    args:                 []
+                                    magic_call_allowed:   null
+                                after_construction_methods:
+
+                                    # Prototype
+                                    -
+                                        method:
+                                            enabled:              true
+                                            id:                   null
+                                            class:                null
+                                            service_key:          null
+                                            name:                 null
+                                            args:                 []
+                                            magic_call_allowed:   null
+                            default_value:        null
+                            getter:               null
+                            setter:               null
+                            dynamic_attribute_marker: null
+                            variables:            []
+                            dynamic_attributes:   []
+                        collection_type:
+                            enabled:              true
+                            property_kind:        collection_type
+                            adder:                null
+                            items_class:          null
+                            item_class_candidate:
+                                class:                null
+                                raw_data_location:
+                                    enabled:              true
+                                    location_name:        parent # One of "parent"
+                                    keys_mapping_values:  []
+                                    keys_mapping_prefix:  null
+                                    keys_mapping_method:
+                                        enabled:              true
+                                        id:                   null
+                                        class:                null
+                                        service_key:          null
+                                        name:                 null
+                                        args:                 []
+                                        magic_call_allowed:   null
+                                instance_creation:
+                                    enabled:              true
+                                    factory_method_name:  null
+                                    factory_method:
+                                        enabled:              true
+                                        id:                   null
+                                        class:                null
+                                        service_key:          null
+                                        name:                 null
+                                        args:                 []
+                                        magic_call_allowed:   null
+                                    set_properties_through_creation_method_when_possible: false
+                                    always_access_properties_directly: false
+                                    after_construction_method:
+                                        enabled:              true
+                                        id:                   null
+                                        class:                null
+                                        service_key:          null
+                                        name:                 null
+                                        args:                 []
+                                        magic_call_allowed:   null
+                                    after_construction_methods:
+
+                                        # Prototype
+                                        -
+                                            method:
+                                                enabled:              true
+                                                id:                   null
+                                                class:                null
+                                                service_key:          null
+                                                name:                 null
+                                                args:                 []
+                                                magic_call_allowed:   null
+                                discriminator_method:
+                                    enabled:              true
+                                    id:                   null
+                                    class:                null
+                                    service_key:          null
+                                    name:                 null
+                                    args:                 []
+                                    magic_call_allowed:   null
+                                discriminator_expression:
+                                    enabled:              true
+                                    id:                   null
+                                    value:                null
+                            item_class_candidates:
+
+                                # Prototype
+                                -
+                                    class:                null
+                                    discriminator_method:
+                                        enabled:              true
+                                        id:                   null
+                                        class:                null
+                                        service_key:          null
+                                        name:                 null
+                                        args:                 []
+                                        magic_call_allowed:   null
+                                    discriminator_expression:
+                                        enabled:              true
+                                        id:                   null
+                                        value:                null
+                            type:                 null
+                            class:                null
+                            key_in_raw_data:      null
+                            data_source:
+                                enabled:              true
+                                id:                   null
+                                method:
+                                    enabled:              true
+                                    id:                   null
+                                    class:                null
+                                    service_key:          null
+                                    name:                 null
+                                    args:                 []
+                                    magic_call_allowed:   null
+                                loading_mode:         lazy # One of "lazy"; "eager"
+                                indexed_by_properties_keys: true
+                                loading_scope:        data_source # One of "data_source"; "property"; "data_source_only_keys"; "data_source_except_keys"
+                                loading_scope_keys:   []
+                                fallback_data_source_ref: null
+                                after_metadata_loading:
+
+                                    # Prototype
+                                    -
+                                        method:
+                                            enabled:              true
+                                            id:                   null
+                                            class:                null
+                                            service_key:          null
+                                            name:                 null
+                                            args:                 []
+                                            magic_call_allowed:   null
+                                before_data_fetching:
+
+                                    # Prototype
+                                    -
+                                        method:
+                                            enabled:              true
+                                            id:                   null
+                                            class:                null
+                                            service_key:          null
+                                            name:                 null
+                                            args:                 []
+                                            magic_call_allowed:   null
+                                after_data_fetching:
+
+                                    # Prototype
+                                    -
+                                        method:
+                                            enabled:              true
+                                            id:                   null
+                                            class:                null
+                                            service_key:          null
+                                            name:                 null
+                                            args:                 []
+                                            magic_call_allowed:   null
+                            data_source_ref:      null
+                            discriminator_method:
+                                enabled:              true
+                                id:                   null
+                                class:                null
+                                service_key:          null
+                                name:                 null
+                                args:                 []
+                                magic_call_allowed:   null
+                            discriminator_expression:
+                                enabled:              true
+                                id:                   null
+                                value:                null
+                            discriminator_method_ref: null
+                            discriminator_expression_ref: null
+                            raw_data_location:
+                                enabled:              true
+                                location_name:        parent # One of "parent"
+                                keys_mapping_values:  []
+                                keys_mapping_prefix:  null
+                                keys_mapping_method:
+                                    enabled:              true
+                                    id:                   null
+                                    class:                null
+                                    service_key:          null
+                                    name:                 null
+                                    args:                 []
+                                    magic_call_allowed:   null
+                            instance_creation:
+                                enabled:              true
+                                factory_method_name:  null
+                                factory_method:
+                                    enabled:              true
+                                    id:                   null
+                                    class:                null
+                                    service_key:          null
+                                    name:                 null
+                                    args:                 []
+                                    magic_call_allowed:   null
+                                set_properties_through_creation_method_when_possible: false
+                                always_access_properties_directly: false
+                                after_construction_method:
+                                    enabled:              true
+                                    id:                   null
+                                    class:                null
+                                    service_key:          null
+                                    name:                 null
+                                    args:                 []
+                                    magic_call_allowed:   null
+                                after_construction_methods:
+
+                                    # Prototype
+                                    -
+                                        method:
+                                            enabled:              true
+                                            id:                   null
+                                            class:                null
+                                            service_key:          null
+                                            name:                 null
+                                            args:                 []
+                                            magic_call_allowed:   null
+                            default_value:        null
+                            getter:               null
+                            setter:               null
+                            variables:            []
+                            dynamic_attribute_marker: null
+                            dynamic_attributes:   []
+                variables:            []

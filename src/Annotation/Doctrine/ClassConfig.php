@@ -1,6 +1,8 @@
 <?php
 
-namespace Big\Hydrator\Annotation\Doctrine;
+namespace Kassko\ObjectHydrator\Annotation\Doctrine;
+
+use Kassko\ObjectHydrator\Model\Enum;
 
 /**
  * @Annotation
@@ -20,13 +22,17 @@ final class ClassConfig
     /**
      * @var string
      */
-    public $rawDataKeyStyle = RawDataKeyStyleEnum::RAW_DATA_KEY_STYLE_UNDERSCORE;
+    public $rawDataKeyStyle = Enum\RawDataKeyStyle::UNDERSCORE;
     /**
-     * @var \Big\Hydrator\Annotation\Doctrine\Method
+     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Method
      */
-    public ?Method $toRawDataKeyStyleConverter = null;
+    public ?Method $rawDataKeyStyleConverter = null;
     /**
      * @var string
      */
     public ?string $defaultAdderNameFormat = null;
+    /**
+     * @var bool
+     */
+    public bool $accessorsToBypass = false;
 }

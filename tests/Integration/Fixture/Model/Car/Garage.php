@@ -1,9 +1,9 @@
 <?php
 
-namespace Big\HydratorTest\Integration\Fixture\Model\Car;
+namespace Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Car;
 
-use Big\Hydrator\Annotation\Doctrine as BHY;
-use Big\HydratorTest\Integration\Fixture;
+use Kassko\ObjectHydrator\Annotation\Doctrine as BHY;
+use Kassko\ObjectHydratorIntegrationTest\Fixture;
 
 class Garage
 {
@@ -11,11 +11,11 @@ class Garage
     /**
      * @BHY\PropertyConfig\Candidates(candidates={
      *      @BHY\PropertyConfig\SingleType(
-     *          class="Big\HydratorTest\Integration\Fixture\Model\Car\GasolinePoweredCar",
+     *          class="Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Car\GasolinePoweredCar",
      *          discriminatorExpression=@BHY\Expression("rawDataKeyExists('car.gasoline_kind')")
      *      ),
      *      @BHY\PropertyConfig\SingleType(
-     *          class="Big\HydratorTest\Integration\Fixture\Model\Car\ElectricCar",
+     *          class="Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Car\ElectricCar",
      *          discriminatorExpression=@BHY\Expression("rawDataKeyExists('car.energy_provider')")
      *      )
      * })

@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
 /**
  * @author kko

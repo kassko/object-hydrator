@@ -1,12 +1,20 @@
 <?php
 
-namespace Big\HydratorTest\Integration;
+namespace Kassko\ObjectHydratorIntegrationTest;
 
-use Big\Hydrator\{Annotation\Doctrine as BHY, HydratorBuilder};
+use Kassko\ObjectHydrator\{Annotation\Doctrine as BHY, Hydrator, HydratorBuilder};
+use Kassko\ObjectHydratorIntegrationTest\Helper;
 use PHPUnit\Framework\TestCase;
 
 class _001_PerformBasicObjectHydrationTest extends TestCase
 {
+    use Helper\IntegrationTestTrait;
+
+    public function setup() : void
+    {
+        $this->initHydrator();
+    }
+
     /**
      * @test
      */
@@ -33,8 +41,8 @@ class _001_PerformBasicObjectHydrationTest extends TestCase
             public function setLastName(string $lastName) { $this->lastName = $lastName; }
         };
 
-        $hydrator = (new HydratorBuilder())->build();
-        $hydrator->hydrate($person, $rawData);
+        //
+        $this->hydrator->hydrate($person, $rawData);
 
         $this->assertSame(1, $person->getId());//Ensure id passed to constructor is not loose after object hydration.
         $this->assertSame('Dany', $person->getFirstName());

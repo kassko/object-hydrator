@@ -1,9 +1,9 @@
 <?php
 
-namespace Big\Hydrator;
+namespace Kassko\ObjectHydrator;
 
-use Big\Hydrator\ClassMetadata;
-use Big\Hydrator\ClassMetadata\Model\Property\{Candidates, Leaf};
+use Kassko\ObjectHydrator\ClassMetadata;
+use Kassko\ObjectHydrator\Model\Property\{Candidates, Leaf};
 
 use function sprintf;
 

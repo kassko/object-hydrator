@@ -1,8 +1,8 @@
 <?php
 
-namespace Big\Hydrator\ObjectExtension;
+namespace Kassko\ObjectHydrator\ObjectExtension;
 
-use Big\Hydrator\Registry;
+use Kassko\ObjectHydrator\Registry;
 
 /**
  * Registry

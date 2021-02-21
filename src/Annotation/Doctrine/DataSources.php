@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\Hydrator\Annotation\Doctrine;
+namespace Kassko\ObjectHydrator\Annotation\Doctrine;
 
 /**
  * @Annotation
@@ -16,7 +16,7 @@ final class DataSources
     /**
      * One or more DataSource annotations.
      *
-     * @var array<\Big\Hydrator\Annotation\Doctrine\DataSource>
+     * @var array<\Kassko\ObjectHydrator\Annotation\Doctrine\DataSource>
      */
     public $items = [];
 }

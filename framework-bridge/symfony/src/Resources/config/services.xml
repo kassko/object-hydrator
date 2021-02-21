@@ -1,0 +1,165 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd"
+>
+
+    <services>
+        <defaults public="true" autowire="false" autoconfigure="false"/>
+
+        <service id="Kassko\ObjectHydrator\Config\Config">
+            <argument>%kassko_object_hydrator.config%</argument>
+        </service>
+
+        <service id="Kassko\ObjectHydrator\Model\Repository\ReflectionClass"/>
+
+        <service id="Kassko\ObjectHydrator\ClassMetadata\Loader\ClassMetadataLoader">
+            <argument type="service" id="Kassko\ObjectHydrator\ClassMetadata\Loader\LoaderResolver"/>
+        </service>
+
+        <service id="Kassko\ObjectHydrator\ClassMetadata\Loader\LoaderResolver">
+            <argument type="tagged" tag="kassko_object_hydrator.metadata_loader" />
+        </service>
+
+        <service id="Kassko\ObjectHydrator\ClassMetadata\Loader\LeafLoaderConfigurator">
+            <argument type="service" id="Kassko\ObjectHydrator\ClassMetadata\Loader\ClassMetadataConfig"/>
+            <argument type="service" id="Kassko\ObjectHydrator\Model\Repository\ReflectionClass"/>
+        </service>
+
+        <service id="Kassko\ObjectHydrator\ClassMetadata\Loader\Leaf\AbstractDelegatedLoader" abstract="true">
+            <configurator service="Kassko\ObjectHydrator\ClassMetadata\Loader\LeafLoaderConfigurator" method="configure"/>
+            <!-- <call method="setConfig">
+                <argument type="service" id="Kassko\ObjectHydrator\ClassMetadata\Loader\ClassMetadataConfig"/>
+            </call>
+            <call method="setReflectionClassRepository">
+                <argument type="service" id="Kassko\ObjectHydrator\Model\Repository\ReflectionClass"/>
+            </call> -->
+        </service>
+
+        <service id="Kassko\ObjectHydrator\ClassMetadata\Loader\Leaf\DoctrineAnnotationLoader"
+            parent="Kassko\ObjectHydrator\ClassMetadata\Loader\Leaf\AbstractDelegatedLoader">
+            <argument type="service" id="Doctrine\Common\Annotations\AnnotationReader"/>
+            <tag name="kassko_object_hydrator.metadata_loader" />
+        </service>
+
+        <service id="Kassko\ObjectHydrator\ClassMetadata\Loader\Leaf\YamlFileLoader"
+            parent="Kassko\ObjectHydrator\ClassMetadata\Loader\Leaf\AbstractDelegatedLoader">
+            <tag name="kassko_object_hydrator.metadata_loader" />
+        </service>
+
+        <service id="Kassko\ObjectHydrator\ClassMetadata\Loader\Leaf\PhpFileLoader"
+            parent="Kassko\ObjectHydrator\ClassMetadata\Loader\Leaf\AbstractDelegatedLoader">
+            <tag name="kassko_object_hydrator.metadata_loader" />
+        </service>
+
+        <service id="Kassko\ObjectHydrator\ClassMetadata\Loader\Leaf\InnerYamlLoader"
+            parent="Kassko\ObjectHydrator\ClassMetadata\Loader\Leaf\AbstractDelegatedLoader">
+            <tag name="kassko_object_hydrator.metadata_loader" />
+        </service>
+
+        <service id="Kassko\ObjectHydrator\ClassMetadata\Loader\Leaf\InnerPhpLoader"
+            parent="Kassko\ObjectHydrator\ClassMetadata\Loader\Leaf\AbstractDelegatedLoader">
+            <tag name="kassko_object_hydrator.metadata_loader" />
+        </service>
+
+        <service id="Doctrine\Common\Annotations\AnnotationReader" class="Doctrine\Common\Annotations\AnnotationReader"/>
+
+        <service id="Kassko\ObjectHydrator\ClassMetadata\Loader\ClassMetadataConfig">
+            <argument>%kassko_object_hydrator.config_class_metadata%</argument>
+        </service>
+
+        <service id="Kassko\ObjectHydrator\ClassMetadata\Loader\ModelBuilder">
+            <argument type="service" id="Kassko\ObjectHydrator\Model\Repository\DataSource"/>
+            <argument type="service" id="Kassko\ObjectHydrator\Model\Repository\Expression"/>
+            <argument type="service" id="Kassko\ObjectHydrator\Model\Repository\Method"/>
+            <argument type="service" id="Kassko\ObjectHydrator\Model\Repository\ReflectionClass"/>
+            <argument type="service" id="Kassko\ObjectHydrator\MethodInvoker"/>
+        </service>
+
+        <service id="Kassko\ObjectHydrator\Model\Repository\DataSource"/>
+        <service id="Kassko\ObjectHydrator\Model\Repository\Expression"/>
+        <service id="Kassko\ObjectHydrator\Model\Repository\Method"/>
+
+        <service id="Kassko\ObjectHydrator\ClassMetadata\Loader\ModelLoader">
+            <argument type="service" id="Kassko\ObjectHydrator\ClassMetadata\Loader\ClassMetadataLoader"/>
+            <argument type="service" id="Kassko\ObjectHydrator\ClassMetadata\Loader\ModelBuilder"/>
+        </service>
+
+        <service id="Kassko\ObjectHydrator\ExpressionContext"/>
+
+        <service id="Kassko\ObjectHydrator\ExpressionEvaluator">
+            <argument type="service" id="Kassko\ObjectHydrator\ExpressionContext"/>
+            <argument>%kassko_object_hydrator.config_data_source_expressions%</argument>
+            <argument type="service" id="kassko_object_hydrator.expression_language" on-invalid="null"/>
+        </service>
+
+        <!-- Will be removed if component symfony/expression-language is not installed. See extension class.-->
+        <service id="kassko_object_hydrator.expression_language" class="Symfony\Component\ExpressionLanguage\ExpressionLanguage"/>
+
+        <service id="Kassko\ObjectHydrator\MethodInvoker">
+            <argument type="service" id="Kassko\ObjectHydrator\ExpressionEvaluator"/>
+            <argument type="service" id="kassko_object_hydrator.closure_service_locator"/>
+        </service>
+
+        <service id="Kassko\ObjectHydrator\DataFetcher">
+            <argument type="service" id="Kassko\ObjectHydrator\MethodInvoker"/>
+            <argument type="service" id="Kassko\ObjectHydrator\Observer\HydratorProcessingObserverManager"/>
+        </service>
+
+        <service id="Kassko\ObjectHydrator\PropertyCandidatesResolver">
+            <argument type="service" id="Kassko\ObjectHydrator\ExpressionEvaluator"/>
+            <argument type="service" id="Kassko\ObjectHydrator\MethodInvoker"/>
+        </service>
+
+        <service id="Kassko\ObjectHydrator\MemberAccessStrategyFactory"/>
+
+        <service id="Kassko\ObjectHydrator\ObjectLoadabilityChecker"/>
+
+        <service id="Kassko\ObjectHydrator\Hydrator">
+            <argument type="service" id="Kassko\ObjectHydrator\ClassMetadata\Loader\ModelLoader"/>
+            <argument type="service" id="Kassko\ObjectHydrator\MemberAccessStrategyFactory"/>
+            <argument type="service" id="Kassko\ObjectHydrator\IdentityMap"/>
+            <argument type="service" id="Kassko\ObjectHydrator\ObjectLoadabilityChecker"/>
+            <argument type="service" id="Kassko\ObjectHydrator\DataFetcher"/>
+            <argument type="service" id="Kassko\ObjectHydrator\MethodInvoker"/>
+            <argument type="service" id="Kassko\ObjectHydrator\ExpressionContext"/>
+            <argument type="service" id="Kassko\ObjectHydrator\EssentialDataProvider"/>
+            <argument type="service" id="Kassko\ObjectHydrator\ExpressionEvaluator"/>
+            <argument type="service" id="Kassko\ObjectHydrator\Config\Config"/>
+            <argument type="service" id="Kassko\ObjectHydrator\Observer\HydratorProcessingObserverManager"/>
+
+            <call method="setPropertyCandidatesResolver">
+                <argument type="service" id="Kassko\ObjectHydrator\PropertyCandidatesResolver"/>
+            </call>
+        </service>
+
+        <service id="Kassko\ObjectHydrator\IdentityMap">
+            <argument type="service" id="Kassko\ObjectHydrator\ObjectLoadabilityChecker"/>
+        </service>
+
+        <service id="Kassko\ObjectHydrator\EssentialDataProvider">
+            <argument type="service" id="Kassko\ObjectHydrator\DataFetcher"/>
+            <argument type="service" id="Kassko\ObjectHydrator\MemberAccessStrategyFactory"/>
+            <argument type="service" id="kassko_object_hydrator.closure_service_locator"/>
+        </service>
+
+        <service id="Kassko\FrameworkBridge\Symfony\ObjectHydrator\ServiceLocator">
+            <argument type="service" id="service_container"/>
+        </service>
+
+        <service id="kassko_object_hydrator.closure_service_locator" class="\Closure">
+            <factory class="\Closure" method="fromCallable"/>
+            <argument type="service" id="Kassko\FrameworkBridge\Symfony\ObjectHydrator\ServiceLocator"/>
+        </service>
+
+        <service id="Kassko\ObjectHydrator\RegistryInitializer" public="true"/>
+
+        <service id="Kassko\ObjectHydrator\Observer\HydratorProcessingObserverManager">
+            <argument type="service" id="Kassko\ObjectHydrator\MethodInvoker"/>
+            <argument type="tagged" tag="kassko_object_hydrator.hydrator_processing_observer"/>
+        </service>
+
+    </services>
+
+</container>

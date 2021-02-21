@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\Hydrator\Annotation\Doctrine;
+namespace Kassko\ObjectHydrator\Annotation\Doctrine;
 
 /**
  * @Annotation
@@ -14,11 +14,11 @@ final class CallbacksAssigningHydratedValue
     use Capability\ToArrayConvertible;
 
     /**
-     * @var \Big\Hydrator\Annotation\Doctrine\Methods
+     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Methods
      */
     public ?Methods $before = null;
     /**
-     * @var \Big\Hydrator\Annotation\Doctrine\Methods
+     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Methods
      */
     public ?Methods $after = null;
 }

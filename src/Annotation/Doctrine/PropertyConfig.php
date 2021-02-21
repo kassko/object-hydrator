@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\Hydrator\Annotation\Doctrine;
+namespace Kassko\ObjectHydrator\Annotation\Doctrine;
 
 /**
  * @author kko
@@ -53,7 +53,11 @@ abstract class PropertyConfig
     /**
      * @internal
      */
-    public $defaultValue;
+    public ?InstanceCreation $instanceCreation = null;
+    /**
+     * @internal
+     */
+    public ?RawDataLocation $rawDataLocation = null;
     /**
      * @internal
      */
@@ -73,23 +77,27 @@ abstract class PropertyConfig
     public array $variables = [];
     /**
      * @internal
-     * @var \Big\Hydrator\Annotation\Doctrine\Callbacks
      */
-    //public ?Callbacks $callbacksUsingMetadata = null;
+    public $defaultValue;
     /**
      * @internal
-     * @var \Big\Hydrator\Annotation\Doctrine\Callbacks
+     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Callbacks
      */
-    //public ?Callbacks $callbacksHydration = null;
+    public ?Callbacks $callbacksUsingMetadata = null;
     /**
      * @internal
-     * @var \Big\Hydrator\Annotation\Doctrine\Callbacks
+     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Callbacks
      */
-    //public ?Callbacks $callbacksAssigningHydratedValue = null;
+    public ?Callbacks $callbacksHydration = null;
+    /**
+     * @internal
+     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Callbacks
+     */
+    public ?Callbacks $callbacksAssigningHydratedValue = null;
     //=== Annotations attributes : end ===//
 
 
-    private array $dynamicAttributes = [];
+    public array $dynamicAttributes = [];
     private array $dynamicAttributesMapping = [];
     private array $forbiddenDynamicAttributes;
 
@@ -102,7 +110,7 @@ abstract class PropertyConfig
     }
 
     public function __set(string $name , $value) : void
-    {
+    {//var_dump('ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo', $name);
         if ($this->dynamicAttributeMarker !== $name[0]) {
             throw new \LogicException(sprintf(
                 'Cannot set property "%s::%s" because it does not exists.',

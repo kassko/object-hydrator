@@ -1,9 +1,9 @@
 <?php
 
-namespace Big\Hydrator\Annotation\Doctrine\PropertyConfig;
+namespace Kassko\ObjectHydrator\Annotation\Doctrine\PropertyConfig;
 
-use Big\Hydrator\Annotation\Doctrine\Capability;
-use Big\Hydrator\Annotation\Doctrine\{ItemClassCandidate, ItemClassCandidates, PropertyConfig};
+use Kassko\ObjectHydrator\Annotation\Doctrine\Capability;
+use Kassko\ObjectHydrator\Annotation\Doctrine\{ItemClassCandidate, ItemClassCandidates, PropertyConfig};
 
 /**
  * @Annotation

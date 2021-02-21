@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\Hydrator\Annotation\Doctrine;
+namespace Kassko\ObjectHydrator\Annotation\Doctrine;
 
 /**
 * @Annotation
@@ -15,7 +15,7 @@ final class Expressions
     /**
      * One or more Method annotations.
      *
-     * @var array<\Big\Hydrator\Annotation\Doctrine\Expression>
+     * @var array<\Kassko\ObjectHydrator\Annotation\Doctrine\Expression>
      */
     public $items = [];
 }

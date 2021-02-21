@@ -1,12 +1,17 @@
 <?php
 
-namespace Big\HydratorTest\Integration\Fixture\Model\Car;
+namespace Kassko\ObjectHydratorIntegrationTest\Fixture\Model\Car;
 
-use Big\Hydrator\Annotation\Doctrine as BHY;
+use Kassko\ObjectHydrator\Annotation\Doctrine as BHY;
 
 abstract class Car
 {
-    use CarTrait;//This is to ckeck if hydration of class with traits works fine.
+    /**
+     * @BHY\PropertyConfig\SingleType
+     */
+    private ?string $brand = null;
 
-    public function __construct(?int $id = null) { $this->id = $id; }
+
+    public function getBrand() : ?string { return $this->brand; }
+    public function setBrand(string $brand) { $this->brand = $brand; }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\HydratorTest\Integration\Fixture\Service;
+namespace Kassko\ObjectHydratorIntegrationTest\Fixture\Service;
 
 class MailConditionnalService
 {

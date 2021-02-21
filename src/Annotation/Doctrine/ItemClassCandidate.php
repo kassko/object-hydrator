@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\Hydrator\Annotation\Doctrine;
+namespace Kassko\ObjectHydrator\Annotation\Doctrine;
 
 /**
  * @Annotation
@@ -18,11 +18,15 @@ final class ItemClassCandidate
      */
     public string $class;
     /**
-     * @var \Big\Hydrator\Annotation\Doctrine\Expression
+     * @internal
+     */
+    public ?ValueObject $valueObject = null;
+    /**
+     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Expression
      */
     public Expression $discriminatorExpression;
     /**
-     * @var \Big\Hydrator\Annotation\Doctrine\Method
+     * @var \Kassko\ObjectHydrator\Annotation\Doctrine\Method
      */
     public Method $discriminatorMethod;
     /**

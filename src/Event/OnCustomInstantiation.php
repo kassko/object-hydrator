@@ -1,6 +1,6 @@
 <?php
 
-namespace Big\Hydrator\Event;
+namespace Kassko\ObjectHydrator\Event;
 
 class OnCustomInstantiation
 {
